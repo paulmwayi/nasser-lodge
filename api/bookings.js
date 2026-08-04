@@ -1,26 +1,8 @@
 // API endpoint for bookings — supports GET (list all) and POST (create new)
-// Data is stored in /data/bookings.json
 
-const fs = require('fs');
-const path = require('path');
-
-const DATA_FILE = path.join(process.cwd(), 'data', 'bookings.json');
-
-function readBookings() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-
-function writeBookings(bookings) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(bookings, null, 2));
-}
+const { readBookings, writeBookings } = require('./_db');
 
 module.exports = async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -29,17 +11,14 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GET — list all bookings
   if (req.method === 'GET') {
-    const bookings = readBookings();
+    const bookings = await readBookings();
     return res.status(200).json({ success: true, bookings });
   }
 
-  // POST — create a new booking
   if (req.method === 'POST') {
     const { name, phone, room, checkin, checkout, paymentMethod, deposit, total, nights, ref } = req.body;
 
-    // Validate
     const missing = [];
     if (!name) missing.push('name');
     if (!phone) missing.push('phone');
@@ -51,8 +30,7 @@ module.exports = async function handler(req, res) {
       return res.status(422).json({ success: false, error: 'Missing fields', fields: missing });
     }
 
-    // Check for double booking
-    const bookings = readBookings();
+    const bookings = await readBookings();
     const ci = new Date(checkin);
     const co = new Date(checkout);
     const conflict = bookings.find(b => {
@@ -70,7 +48,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Generate reference
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -97,7 +74,7 @@ module.exports = async function handler(req, res) {
     };
 
     bookings.push(newBooking);
-    writeBookings(bookings);
+    await writeBookings(bookings);
 
     return res.status(201).json({ success: true, booking: newBooking });
   }
