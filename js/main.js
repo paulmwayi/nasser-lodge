@@ -4,15 +4,11 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ----- Mobile Nav Toggle ----- */
   const nav = document.querySelector('.nav');
   const navToggle = document.querySelector('.nav__toggle');
   const navLinks = document.querySelector('.nav__links');
   const navLinkItems = document.querySelectorAll('.nav__links a');
 
-  // Nav is always visible (static) — no scroll-based class changes
-
-  /* ----- Mobile Nav Toggle ----- */
   navToggle.addEventListener('click', () => {
     const isOpen = navLinks.classList.toggle('nav__links--open');
     navToggle.classList.toggle('nav__toggle--open');
@@ -27,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ----- Scroll Animations (Intersection Observer) ----- */
   const observerOptions = {
     root: null,
     rootMargin: '0px 0px -60px 0px',
@@ -38,11 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('animate-on-scroll--visible');
-        // Also trigger stagger children
         if (entry.target.classList.contains('stagger-children')) {
           entry.target.classList.add('stagger-children--visible');
         }
-        // Don't unobserve so chapters can re-trigger
       }
     });
   }, observerOptions);
@@ -51,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     animateObserver.observe(el);
   });
 
-  /* ----- Smooth Scroll for Anchor Links ----- */
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function(e) {
       const target = document.querySelector(this.getAttribute('href'));
@@ -62,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  /* ----- Booking Form Submission (on book.html only) ----- */
   const bookingForm = document.getElementById('booking-form');
   if (bookingForm) {
     bookingForm.addEventListener('submit', function(e) {
@@ -78,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `(Please confirm availability and deposit amount)`
       );
 
-      const whatsappUrl = `https://wa.me/260976327007?text=${message}`;
+      const whatsappUrl = `https://wa.me/260978176195?text=${message}`;
 
       const submitBtn = bookingForm.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
@@ -87,8 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.disabled = true;
 
       setTimeout(() => {
-        // Only open WhatsApp if the book.html handler hasn't already done so
-        // (book.html has its own submit handler that overrides this)
         submitBtn.textContent = originalText;
         submitBtn.style.background = '';
         submitBtn.disabled = false;
@@ -96,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ----- Current Year in Footer ----- */
   const yearSpan = document.getElementById('current-year');
   if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
