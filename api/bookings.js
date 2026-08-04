@@ -1,78 +1,94 @@
-const { writeBookings, readBookings } = require('./_db');
-const { v4: uuidv4 } = require('uuid');
+// API endpoint for bookings — supports GET (list all or single by id) and POST (create new + initiate Africa's Talking mobile checkout)
+
+const { readBookings, writeBookings } = require('./_db');
 const at = require('./_africastalking');
 const sms = require('./_sms');
 
-/**
- * POST /api/bookings — Create a new booking
- * Body: { name, phone, email?, room, checkin, checkout, nights, total, deposit?, paymentMethod? }
- */
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  try {
-    const { name, phone, email, room, checkin, checkout, nights, total, deposit, paymentMethod } = req.body;
-
-    if (!name || !phone) {
-      return res.status(400).json({ error: 'Name and phone are required' });
-    }
-
-    if (!room || !checkin || !checkout) {
-      return res.status(400).json({ error: 'Room, check-in, and check-out are required' });
-    }
-
-    // Check for duplicate bookings (same room + overlapping dates)
+  // GET: list all bookings or fetch one by id
+  if (req.method === 'GET') {
     const bookings = await readBookings();
-    const checkinDate = new Date(checkin + 'T00:00:00Z');
-    const checkoutDate = new Date(checkout + 'T00:00:00Z');
 
+    // Single booking lookup (used for polling after payment init)
+    if (req.query.id) {
+      const booking = bookings.find(b => b.id === req.query.id);
+      if (!booking) {
+        return res.status(404).json({ success: false, error: 'Booking not found' });
+      }
+      return res.status(200).json({ success: true, booking });
+    }
+
+    return res.status(200).json({ success: true, bookings });
+  }
+
+  // POST: create booking + optionally initiate Africa's Talking mobile checkout
+  if (req.method === 'POST') {
+    const { name, phone, email, room, checkin, checkout, paymentMethod, deposit, total, nights, ref } = req.body;
+
+    const missing = [];
+    if (!name) missing.push('name');
+    if (!phone) missing.push('phone');
+    if (!room) missing.push('room');
+    if (!checkin) missing.push('checkin');
+    if (!checkout) missing.push('checkout');
+
+    if (missing.length > 0) {
+      return res.status(422).json({ success: false, error: 'Missing fields', fields: missing });
+    }
+
+    // Double-booking check
+    const bookings = await readBookings();
+    const ci = new Date(checkin);
+    const co = new Date(checkout);
     const conflict = bookings.find(b => {
       if (b.room !== room) return false;
-      const bCheckin = new Date(b.checkin + 'T00:00:00Z');
-      const bCheckout = new Date(b.checkout + 'T00:00:00Z');
-      return checkinDate < bCheckout && checkoutDate > bCheckin;
+      if (b.status === 'cancelled') return false;
+      const bci = new Date(b.checkin);
+      const bco = new Date(b.checkout);
+      return ci < bco && co > bci;
     });
 
     if (conflict) {
       return res.status(409).json({
-        error: 'Room already booked for these dates.',
-        conflict: {
-          ref: conflict.ref,
-          checkin: conflict.checkin,
-          checkout: conflict.checkout
-        }
+        success: false,
+        error: 'Room already booked for these dates',
+        conflict: { guest: conflict.name, checkin: conflict.checkin, checkout: conflict.checkout }
       });
     }
 
-    // Format phone number
-    const cleaned = phone.replace(/[^0-9]/g, '');
-    const formattedPhone = cleaned.startsWith('260')
-      ? '+' + cleaned
-      : cleaned.length === 9
-        ? '+260' + cleaned
-        : '+' + cleaned.replace(/^0+/, '260');
-
-    const bookingRef = at.generateReference();
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const rand = String(Math.floor(Math.random() * 9000) + 1000);
+    const bookingRef = ref || ('NL-' + y + m + d + '-' + rand);
 
     const newBooking = {
-      id: uuidv4(),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       ref: bookingRef,
-      name: name,
-      phone: formattedPhone,
+      name,
+      phone: '+260 ' + phone.replace(/^\+?260?/, '').replace(/^0/, ''),
       email: email || null,
-      room: room,
-      checkin: checkin,
-      checkout: checkout,
+      room,
+      checkin,
+      checkout,
       nights: nights || 1,
       total: total || 0,
-      deposit: 0,
-      balance: total || 0,
-      paymentMethod: null,
+      deposit: deposit || 0,
+      balance: (total || 0) - (deposit || 0),
+      paymentMethod: paymentMethod || null,
       paid: false,
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
       status: 'pending',
+      // Africa's Talking tracking fields
       atTransactionId: null,
       atRef: null,
       atStatus: null
@@ -114,7 +130,6 @@ module.exports = async (req, res) => {
       } else {
         fallbackReason = 'no_api_key';
       }
-      // When no payment API is configured or API fails, booking stays pending — admin confirms manually
     }
 
     bookings.push(newBooking);
@@ -140,8 +155,7 @@ module.exports = async (req, res) => {
         description: atResult.description
       } : null
     });
-  } catch (err) {
-    console.error('Booking error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
   }
+
+  return res.status(405).json({ success: false, error: 'Method not allowed' });
 };
