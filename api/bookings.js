@@ -2,6 +2,7 @@
 
 const { readBookings, writeBookings } = require('./_db');
 const flw = require('./_flutterwave');
+const sms = require('./_sms');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -131,6 +132,13 @@ module.exports = async function handler(req, res) {
 
     bookings.push(newBooking);
     await writeBookings(bookings);
+
+    // Send SMS notification to admin for fallback (pending payment) bookings
+    if (!paymentInitiated && paymentMethod) {
+      sms.notifyAdminNewBooking(newBooking).catch(e => {
+        console.error('SMS notification failed:', e);
+      });
+    }
 
     return res.status(201).json({
       success: true,
