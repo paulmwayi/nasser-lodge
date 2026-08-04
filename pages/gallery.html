@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Photo gallery of Nasser Lodge — rooms, grounds, dining, and the beauty of Mongu, Western Province, Zambia.">
+  <title>Gallery — Nasser Lodge | Mongu, Zambia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .page-header {
+      padding: 10rem var(--space-lg) var(--space-xl);
+      text-align: center;
+      background: var(--color-bg-warm);
+    }
+    .page-body {
+      padding: var(--space-2xl) var(--space-lg);
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .gallery-section {
+      margin-bottom: var(--space-2xl);
+    }
+    .gallery-section__title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--color-gold);
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid rgba(200, 148, 74, 0.15);
+    }
+
+    /* Gallery image-specific styling */
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 8px;
+      transition: transform 0.5s var(--ease-out-expo), filter 0.4s ease;
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.06);
+      filter: brightness(1.1);
+    }
+
+    .gallery-item__label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem;
+      background: linear-gradient(transparent, rgba(13, 13, 13, 0.85));
+      color: var(--color-text-primary);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      border-radius: 0 0 8px 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .gallery-item:hover .gallery-item__label {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  .nav__logo-img { height: 38px; width: auto; display: block; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav nav--scrolled" role="navigation" aria-label="Main navigation">
+    <a href="../index.html" class="nav__logo"><img src="../assets/logo.png" alt="Nasser Lodge" class="nav__logo-img"></a>
+    <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav__links">
+      <li><a href="../index.html#rooms">Rooms</a></li>
+      <li><a href="../index.html#dining">Dining</a></li>
+      <li><a href="../index.html#location">Location</a></li>
+      <li><a href="gallery.html" style="color:var(--color-gold);">Gallery</a></li>
+      <li><a href="book.html" class="nav__cta">Book Now</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-header">
+    <span class="section-label">Visual Tour</span>
+    <h1>Gallery</h1>
+    <p class="subtitle" style="margin:var(--space-md) auto 0;">
+      A glimpse of Nasser Lodge — the rooms, the grounds, the dining,
+      and the beauty of Mongu.
+    </p>
+  </header>
+
+  <main class="page-body">
+
+    <!-- Rooms -->
+    <section class="gallery-section">
+      <h2 class="gallery-section__title">The Rooms</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <img src="../images/room-standard.jpg" alt="Standard Room — Queen bed with elegant canopy, white Paris-themed bedding, en-suite bathroom" loading="lazy">
+          <span class="gallery-item__label">Standard Room</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/room-deluxe.jpg" alt="Deluxe Room — King bed with tufted charcoal headboard, patterned curtains, garden view" loading="lazy">
+          <span class="gallery-item__label">Deluxe Room</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/reception.jpg" alt="Reception — Welcoming front desk with red signage, polished floors, certificates on the wall" loading="lazy">
+          <span class="gallery-item__label">Reception</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/hallway-chandelier.jpg" alt="Grand hallway with ornate gold chandelier, warm recessed lighting, cream walls" loading="lazy">
+          <span class="gallery-item__label">Hallway &amp; Chandelier</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/stairway-chandelier.jpg" alt="Elegant stairway landing with gold chandelier, metal railing, glossy tiled floors" loading="lazy">
+          <span class="gallery-item__label">Stairway</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/staircase.jpg" alt="Bright marble staircase with stainless steel railings, modern interior" loading="lazy">
+          <span class="gallery-item__label">Main Staircase</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grounds -->
+    <section class="gallery-section">
+      <h2 class="gallery-section__title">The Grounds</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <img src="../images/lodge-entrance.jpg" alt="Nasser Lodge main entrance — gated two-storey building with NOW OPEN banner, trees, parked vehicles" loading="lazy">
+          <span class="gallery-item__label">Lodge Entrance</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/lodge-exterior.jpg" alt="Lodge exterior — modern two-storey building with blue-tinted windows, paved courtyard, landscaped shrubs" loading="lazy">
+          <span class="gallery-item__label">Lodge Exterior</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/lodge-courtyard-exterior.jpg" alt="Lodge courtyard — U-shaped building with blue-framed windows, paved grounds, clear skies" loading="lazy">
+          <span class="gallery-item__label">Courtyard View</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/courtyard.jpg" alt="Shaded courtyard garden — tiled walkway, central rock planter, palm trees, terracotta accents" loading="lazy">
+          <span class="gallery-item__label">Shaded Courtyard</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/lodge-walkway.jpg" alt="Evening exterior walkway — stone-and-plaster facade, green shrubs, soft dusk lighting" loading="lazy">
+          <span class="gallery-item__label">Exterior Walkway</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/nasser-signboard.jpg" alt="Nasser Lodge signboard — Accommodation, Events &amp; Gym with reservation phone number" loading="lazy">
+          <span class="gallery-item__label">Welcome Sign</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dining & Bar -->
+    <section class="gallery-section">
+      <h2 class="gallery-section__title">Dining &amp; Bar</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item">
+          <img src="../images/restaurant.jpg" alt="Main restaurant — white tablecloths, black-and-red chairs, red accent column, beverage coolers" loading="lazy">
+          <span class="gallery-item__label">Restaurant</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/dining-room.jpg" alt="Dining room — pink upholstered chairs, decorative curtains, maroon ceiling accents, fully set tables" loading="lazy">
+          <span class="gallery-item__label">Dining Room</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/dining-setup.jpg" alt="Social gathering — man at decorated blue tablecloth with white charger plates, bright event room" loading="lazy">
+          <span class="gallery-item__label">Events &amp; Gatherings</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/food-plate.jpg" alt="Zambian cuisine — plated meal with stewed meat, rice, mixed vegetables, and fries" loading="lazy">
+          <span class="gallery-item__label">Zambian Specialties</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/event-banquet.jpg" alt="Formal banquet — white tablecloths, blue chair sashes, floral centrepiece, seated guests in formal attire" loading="lazy">
+          <span class="gallery-item__label">Banquet Service</span>
+        </div>
+        <div class="gallery-item">
+          <img src="../images/banquet-hall.jpg" alt="Banquet hall — rows of covered tables, red-accented ceiling lights, beige curtains, glossy floors" loading="lazy">
+          <span class="gallery-item__label">Banquet Hall</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mongu & Surroundings -->
+    <section class="gallery-section">
+      <h2 class="gallery-section__title">Mongu &amp; Western Province</h2>
+      <div class="gallery-grid">
+        <div class="gallery-item" style="background: var(--color-surface); display: flex; align-items: center; justify-content: center;">
+          <div class="media-block__placeholder">
+            <div class="media-block__icon" style="font-size:2.5rem;opacity:0.3;">🌊</div>
+            <div class="media-block__label" style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;">Barotse Floodplain</div>
+            <div style="font-size:0.65rem;color:var(--color-text-muted);">Photo coming soon</div>
+          </div>
+        </div>
+        <div class="gallery-item" style="background: var(--color-surface); display: flex; align-items: center; justify-content: center;">
+          <div class="media-block__placeholder">
+            <div class="media-block__icon" style="font-size:2.5rem;opacity:0.3;">🛶</div>
+            <div class="media-block__label" style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;">Kuomboka Ceremony</div>
+            <div style="font-size:0.65rem;color:var(--color-text-muted);">Photo coming soon</div>
+          </div>
+        </div>
+        <div class="gallery-item" style="background: var(--color-surface); display: flex; align-items: center; justify-content: center;">
+          <div class="media-block__placeholder">
+            <div class="media-block__icon" style="font-size:2.5rem;opacity:0.3;">🦁</div>
+            <div class="media-block__label" style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;">Liuwa Plain</div>
+            <div style="font-size:0.65rem;color:var(--color-text-muted);">Photo coming soon</div>
+          </div>
+        </div>
+        <div class="gallery-item" style="background: var(--color-surface); display: flex; align-items: center; justify-content: center;">
+          <div class="media-block__placeholder">
+            <div class="media-block__icon" style="font-size:2.5rem;opacity:0.3;">⚓</div>
+            <div class="media-block__label" style="font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;">Mongu Harbour</div>
+            <div style="font-size:0.65rem;color:var(--color-text-muted);">Photo coming soon</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer__inner">
+      <div>
+        <div class="footer__brand">Nasser Lodge</div>
+        <p class="footer__desc">
+          Where luxury feels like home. Premium accommodation in Mongu, Western Province, Zambia.
+        </p>
+      </div>
+      <div>
+        <div class="footer__heading">Quick Links</div>
+        <ul class="footer__links">
+          <li><a href="../index.html#rooms">Rooms &amp; Rates</a></li>
+          <li><a href="../index.html#dining">Dining</a></li>
+          <li><a href="../index.html#location">Location</a></li>
+          <li><a href="book.html">Book Now</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__heading">Contact</div>
+        <ul class="footer__links">
+          <li>📍 P4HQ+W93, Lusaka Road, Mongu</li>
+          <li>📞 <a href="tel:+260976327007">+260 976 327 007</a></li>
+          <li>✉️ <a href="mailto:nasserlodges49@gmail.com">nasserlodges49@gmail.com</a></li>
+          <li><a href="https://facebook.com/nasserlodge" target="_blank" rel="noopener">📘 Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>&copy; <span id="current-year">2026</span> Nasser Lodge. All rights reserved.</span>
+      <span>Mongu, Western Province, Zambia</span>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelector('.nav__toggle').addEventListener('click', function() {
+      document.querySelector('.nav__links').classList.toggle('nav__links--open');
+      this.classList.toggle('nav__toggle--open');
+    });
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
