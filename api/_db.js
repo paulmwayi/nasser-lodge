@@ -1,66 +1,48 @@
-// Shared database helpers — uses in-memory cache for development, or persist.
-// In production on Vercel, this falls back to in-memory (which resets on cold starts).
-// For real persistence, connect to Vercel KV by setting KV_URL, KV_REST_API_URL,
-// KV_REST_API_TOKEN, KV_REST_API_READ_ONLY_TOKEN in your Vercel environment variables.
-
-let kv;
-let isKvAvailable = false;
-
-async function initKv() {
-  if (kv !== undefined) return isKvAvailable;
-  try {
-    // Vercel KV uses the @vercel/kv package auto-injected
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      // Manual fetch-based KV access — no extra dependencies needed
-      kv = true;
-      isKvAvailable = true;
-      return true;
-    }
-  } catch {}
-  kv = false;
-  isKvAvailable = false;
-  return false;
-}
-
-// In-memory fallback store (lives for the serverless function's lifecycle)
-const memoryStore = new Map();
+// Shared database helpers — uses Upstash Redis (REST API) when available,
+// falls back to in-memory cache for local dev.
 
 const BOOKINGS_KEY = 'bookings_list';
 
-async function kvGet(key) {
-  if (await initKv()) {
-    const res = await fetch(`${process.env.KV_REST_API_URL}/get/${key}`, {
-      headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` }
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.result ? JSON.parse(data.result) : null;
-  }
-  return memoryStore.get(key) || null;
+// In-memory fallback
+const memoryStore = new Map();
+
+async function redisFetch(command, ...args) {
+  const url = `${process.env.UPSTASH_REDIS_REST_URL}/${command}/${args.join('/')}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+  });
+  if (!res.ok) throw new Error(`Redis error: ${res.status}`);
+  const data = await res.json();
+  return data.result;
 }
 
-async function kvSet(key, value) {
-  if (await initKv()) {
-    await fetch(`${process.env.KV_REST_API_URL}/set/${key}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ value: JSON.stringify(value) })
-    });
-    return;
-  }
-  memoryStore.set(key, value);
+function isRedisAvailable() {
+  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
 async function readBookings() {
-  const data = await kvGet(BOOKINGS_KEY);
-  return Array.isArray(data) ? data : [];
+  if (isRedisAvailable()) {
+    try {
+      const raw = await redisFetch('get', BOOKINGS_KEY);
+      if (raw) return JSON.parse(raw);
+      return [];
+    } catch (e) {
+      console.error('Redis read failed, using memory fallback:', e.message);
+    }
+  }
+  return memoryStore.get(BOOKINGS_KEY) || [];
 }
 
 async function writeBookings(bookings) {
-  await kvSet(BOOKINGS_KEY, bookings);
+  if (isRedisAvailable()) {
+    try {
+      await redisFetch('set', BOOKINGS_KEY, JSON.stringify(bookings));
+      return;
+    } catch (e) {
+      console.error('Redis write failed, using memory fallback:', e.message);
+    }
+  }
+  memoryStore.set(BOOKINGS_KEY, bookings);
 }
 
 module.exports = { readBookings, writeBookings };
