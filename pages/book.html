@@ -240,29 +240,39 @@
   <!-- Payment Popup -->
   <div class="popup-overlay" id="popup-overlay">
     <div class="popup" id="popup">
+      <!-- Step: Enter Amount -->
       <div id="popup-step-amount">
         <h3 id="popup-title">Pay with Airtel Money</h3>
         <p>Enter the deposit amount. Recommended: <strong id="popup-suggested">ZMW 250</strong></p>
         <div class="amount-display" id="popup-display">ZMW 0</div>
         <input class="form-input" type="number" id="popup-amount" placeholder="Enter amount (ZMW)" min="1" step="1" inputmode="numeric">
         <p class="error-msg" id="amount-error"></p>
-        <button class="btn btn--primary" onclick="confirmAmount()">Next: Enter PIN</button>
+        <button class="btn btn--primary" id="pay-now-btn" onclick="confirmAndPay()">Pay Now</button>
         <button class="btn btn--outline" style="margin-top:var(--space-sm);" onclick="closePopup()">Cancel</button>
       </div>
-      <div id="popup-step-pin" style="display:none;">
-        <h3>Enter Your Mobile Money PIN</h3>
-        <p id="pin-provider-label">Sending ZMW 250 to 0976 327 007</p>
-        <input class="form-input" type="password" id="popup-pin" placeholder="Enter 4-6 digit PIN" maxlength="6" inputmode="numeric" pattern="[0-9]*">
-        <p class="error-msg" id="pin-error"></p>
-        <div class="popup__spinner" id="popup-spinner"></div>
-        <button class="btn btn--primary" id="pin-submit-btn" onclick="submitPayment()">Confirm & Pay</button>
-        <button class="btn btn--outline" style="margin-top:var(--space-sm);" onclick="backToAmount()">Back</button>
+      <!-- Step: Waiting for phone confirmation -->
+      <div id="popup-step-waiting" style="display:none;">
+        <h3 id="waiting-title">Confirm on Your Phone</h3>
+        <p id="waiting-msg">A payment request has been sent to your phone. Please check your phone and enter your mobile money PIN to confirm.</p>
+        <div class="popup__spinner" id="popup-spinner" style="display:block;"></div>
+        <p style="font-size:0.75rem;color:var(--color-text-muted);margin-top:var(--space-md);">Waiting for payment confirmation…</p>
+        <p class="error-msg" id="waiting-error"></p>
+        <button class="btn btn--outline" style="margin-top:var(--space-sm);" onclick="cancelWaiting()">Cancel</button>
       </div>
+      <!-- Step: Success -->
       <div class="popup__success" id="popup-step-success">
         <div class="check">✅</div>
         <h3>Payment Successful!</h3>
         <p id="success-msg">ZMW 250 sent to Nasser Lodge.</p>
         <button class="btn btn--primary" onclick="showReceiptFromPayment()">View My Receipt</button>
+      </div>
+      <!-- Step: Failed -->
+      <div id="popup-step-failed" style="display:none;">
+        <div style="font-size:3rem;margin-bottom:var(--space-md);">❌</div>
+        <h3>Payment Not Confirmed</h3>
+        <p id="failed-msg">We didn't receive your payment confirmation. You can try again or pay at the lodge.</p>
+        <button class="btn btn--primary" onclick="retryPayment()">Try Again</button>
+        <button class="btn btn--outline" style="margin-top:var(--space-sm);" onclick="closePopup()">Close</button>
       </div>
     </div>
   </div>
@@ -321,10 +331,14 @@
   <script>
     var guestName = '';
     var guestPhone = '';
+    var guestEmail = '';
     var selectedProvider = null;
     var paymentAmount = 0;
     var bookingId = null;
     var bookingRef = null;
+    var pollingTimer = null;
+    var maxPollAttempts = 40;
+    var pollAttempts = 0;
 
     var ROOM_RATES = {
       'Standard Room': 500,
@@ -332,7 +346,7 @@
       'Executive Suite': 1200
     };
 
-    var PROVIDER_NAMES = { airtel: 'Airtel Money', mtn: 'MTN Mobile Money (MoMo)', zamtel: 'Zamtel Kwacha' };
+    var PROVIDER_NAMES = { airtel: 'Airtel Money', mtn: 'MTN Mobile Money', zamtel: 'Zamtel Kwacha' };
 
     function formatDateReadable(iso) {
       if (!iso) return '-';
@@ -358,6 +372,7 @@
       var roomType = document.getElementById('room-type').value;
       guestName = document.getElementById('fullname').value.trim();
       guestPhone = document.getElementById('phone').value.trim();
+      guestEmail = guestPhone.replace(/[^0-9]/g, '') + '@guest.nasserlodge.com';
       if (!guestName || !guestPhone || !checkin || !checkout || !roomType) return;
 
       window._checkin = checkin;
@@ -398,10 +413,10 @@
       document.getElementById('popup-display').textContent = 'ZMW ' + suggested.toLocaleString();
       document.getElementById('amount-error').textContent = '';
 
-      document.getElementById('popup-amount').addEventListener('input', function() {
+      document.getElementById('popup-amount').oninput = function() {
         var v = parseInt(this.value) || 0;
         document.getElementById('popup-display').textContent = 'ZMW ' + v.toLocaleString();
-      });
+      };
 
       resetPopupSteps();
       document.getElementById('popup-overlay').classList.add('popup-overlay--visible');
@@ -409,18 +424,29 @@
 
     function resetPopupSteps() {
       document.getElementById('popup-step-amount').style.display = 'block';
-      document.getElementById('popup-step-pin').style.display = 'none';
+      document.getElementById('popup-step-waiting').style.display = 'none';
       document.getElementById('popup-step-success').style.display = 'none';
+      document.getElementById('popup-step-failed').style.display = 'none';
       document.getElementById('popup-spinner').style.display = 'none';
-      document.getElementById('pin-error').textContent = '';
+      document.getElementById('waiting-error').textContent = '';
       document.getElementById('amount-error').textContent = '';
+      document.getElementById('pay-now-btn').disabled = false;
     }
 
     function closePopup() {
+      stopPolling();
       document.getElementById('popup-overlay').classList.remove('popup-overlay--visible');
     }
 
-    function confirmAmount() {
+    function stopPolling() {
+      if (pollingTimer) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
+      pollAttempts = 0;
+    }
+
+    async function confirmAndPay() {
       var amount = parseInt(document.getElementById('popup-amount').value);
       if (!amount || amount < 1) {
         document.getElementById('amount-error').textContent = 'Please enter a valid amount.';
@@ -428,101 +454,115 @@
       }
       paymentAmount = amount;
 
-      document.getElementById('pin-provider-label').textContent =
-        PROVIDER_NAMES[selectedProvider] + ' — Sending ZMW ' + amount.toLocaleString() + ' to 0976 327 007';
-
-      document.getElementById('popup-step-amount').style.display = 'none';
-      document.getElementById('popup-step-pin').style.display = 'block';
-      document.getElementById('popup-pin').value = '';
-      document.getElementById('pin-error').textContent = '';
-      document.getElementById('popup-pin').focus();
-    }
-
-    function backToAmount() {
-      document.getElementById('popup-step-pin').style.display = 'none';
-      document.getElementById('popup-step-amount').style.display = 'block';
-    }
-
-    async function submitPayment() {
-      var pin = document.getElementById('popup-pin').value.trim();
-      if (!/^\d{4,6}$/.test(pin)) {
-        document.getElementById('pin-error').textContent = 'PIN must be 4-6 digits.';
-        return;
-      }
-
-      document.getElementById('pin-submit-btn').disabled = true;
-      document.getElementById('pin-error').textContent = '';
-      document.getElementById('popup-spinner').style.display = 'block';
+      document.getElementById('pay-now-btn').disabled = true;
+      document.getElementById('pay-now-btn').textContent = 'Processing...';
+      document.getElementById('amount-error').textContent = '';
 
       try {
-        // Step 1: Create booking
-        var bookingRes = await fetch('/api/bookings', {
+        var res = await fetch('/api/bookings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: guestName,
             phone: guestPhone,
+            email: guestEmail,
             room: window._roomType,
             checkin: window._checkin,
             checkout: window._checkout,
             nights: window._nights,
             total: window._totalPrice,
-            paymentMethod: PROVIDER_NAMES[selectedProvider]
+            paymentMethod: PROVIDER_NAMES[selectedProvider],
+            deposit: paymentAmount
           })
         });
 
-        var bookingData = await bookingRes.json();
+        var data = await res.json();
 
-        if (!bookingData.success) {
-          if (bookingRes.status === 409) {
-            document.getElementById('pin-error').textContent = 'Room already booked. Please go back and choose different dates.';
-          } else {
-            document.getElementById('pin-error').textContent = bookingData.error || 'Booking failed. Please try again.';
+        if (!data.success) {
+          document.getElementById('amount-error').textContent = data.error || 'Booking failed.';
+          if (res.status === 409) {
+            document.getElementById('amount-error').textContent = 'Room already booked for these dates.';
           }
-          document.getElementById('pin-submit-btn').disabled = false;
-          document.getElementById('popup-spinner').style.display = 'none';
+          document.getElementById('pay-now-btn').disabled = false;
+          document.getElementById('pay-now-btn').textContent = 'Pay Now';
           return;
         }
 
-        bookingId = bookingData.booking.id;
-        bookingRef = bookingData.booking.ref;
+        bookingId = data.booking.id;
+        bookingRef = data.booking.ref;
 
-        // Step 2: Process payment
-        var payRes = await fetch('/api/payments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId: bookingId,
-            amount: paymentAmount,
-            provider: PROVIDER_NAMES[selectedProvider],
-            phone: guestPhone,
-            pin: pin
-          })
-        });
+        document.getElementById('popup-step-amount').style.display = 'none';
+        document.getElementById('popup-step-waiting').style.display = 'block';
+        document.getElementById('popup-spinner').style.display = 'block';
+        document.getElementById('waiting-title').textContent = 'Confirm on Your Phone';
+        document.getElementById('waiting-msg').textContent =
+          'A payment request of ZMW ' + paymentAmount.toLocaleString() +
+          ' has been sent to your phone via ' + PROVIDER_NAMES[selectedProvider] +
+          '. Please check your phone and enter your mobile money PIN to confirm.';
+        document.getElementById('waiting-error').textContent = '';
 
-        var payData = await payRes.json();
-
-        if (!payData.success) {
-          document.getElementById('pin-error').textContent = payData.error || 'Payment failed.';
-          document.getElementById('pin-submit-btn').disabled = false;
-          document.getElementById('popup-spinner').style.display = 'none';
-          return;
-        }
-
-        // Success!
-        document.getElementById('success-msg').textContent =
-          'ZMW ' + paymentAmount.toLocaleString() + ' sent to Nasser Lodge via ' + PROVIDER_NAMES[selectedProvider] + '.';
-
-        document.getElementById('popup-step-pin').style.display = 'none';
-        document.getElementById('popup-spinner').style.display = 'none';
-        document.getElementById('popup-step-success').style.display = 'block';
-        setStep(3);
+        startPolling();
 
       } catch (err) {
-        document.getElementById('pin-error').textContent = 'Network error. Please check your connection and try again.';
-        document.getElementById('pin-submit-btn').disabled = false;
-        document.getElementById('popup-spinner').style.display = 'none';
+        document.getElementById('amount-error').textContent = 'Network error. Please try again.';
+        document.getElementById('pay-now-btn').disabled = false;
+        document.getElementById('pay-now-btn').textContent = 'Pay Now';
       }
+    }
+
+    function startPolling() {
+      stopPolling();
+      pollAttempts = 0;
+      pollingTimer = setInterval(checkPaymentStatus, 3000);
+    }
+
+    async function checkPaymentStatus() {
+      pollAttempts++;
+      if (pollAttempts > maxPollAttempts) {
+        stopPolling();
+        showPaymentFailed('Payment confirmation is taking too long. Check your phone or try again.');
+        return;
+      }
+      try {
+        var res = await fetch('/api/payments?bookingId=' + bookingId);
+        var data = await res.json();
+        if (data.success && data.paid) {
+          stopPolling();
+          showPaymentSuccess();
+        }
+      } catch (e) {}
+    }
+
+    function showPaymentSuccess() {
+      document.getElementById('popup-step-waiting').style.display = 'none';
+      document.getElementById('popup-spinner').style.display = 'none';
+      document.getElementById('success-msg').textContent =
+        'ZMW ' + paymentAmount.toLocaleString() + ' sent to Nasser Lodge via ' + PROVIDER_NAMES[selectedProvider] + '.';
+      document.getElementById('popup-step-success').style.display = 'block';
+      setStep(3);
+    }
+
+    function showPaymentFailed(msg) {
+      document.getElementById('popup-step-waiting').style.display = 'none';
+      document.getElementById('popup-spinner').style.display = 'none';
+      document.getElementById('failed-msg').textContent = msg || 'We did not receive your payment confirmation.';
+      document.getElementById('popup-step-failed').style.display = 'block';
+    }
+
+    function cancelWaiting() {
+      stopPolling();
+      closePopup();
+    }
+
+    function retryPayment() {
+      resetPopupSteps();
+      document.getElementById('popup-overlay').classList.add('popup-overlay--visible');
+      var suggested = Math.ceil(window._totalPrice * 0.5);
+      document.getElementById('popup-title').textContent = 'Pay with ' + PROVIDER_NAMES[selectedProvider];
+      document.getElementById('popup-suggested').textContent = 'ZMW ' + suggested.toLocaleString();
+      document.getElementById('popup-amount').value = suggested;
+      document.getElementById('popup-display').textContent = 'ZMW ' + suggested.toLocaleString();
+      document.getElementById('amount-error').textContent = '';
     }
 
     function showReceiptFromPayment() {
@@ -601,5 +641,6 @@
 
     document.getElementById('current-year').textContent = new Date().getFullYear();
   </script>
+
 </body>
 </html>
