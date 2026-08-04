@@ -1,34 +1,19 @@
-// Flutterwave webhook receiver — called by Flutterwave when a payment completes
-// Also supports manual status check via GET ?chargeId=xxx&bookingId=xxx
+// Africa's Talking payment verification endpoint
+// Supports polling via GET ?bookingId=xxx to check if payment was confirmed
 
 const { readBookings, writeBookings } = require('./_db');
-const flw = require('./_flutterwave');
-
-// Verify the webhook came from Flutterwave (using secret hash)
-function verifyWebhookSignature(payload, signature) {
-  if (!signature || !process.env.FLW_SECRET_HASH) {
-    // If no hash secret is set, we can't verify — but we still process
-    // In production, always set FLW_SECRET_HASH on Vercel
-    console.warn('FLW_SECRET_HASH not configured — webhook signature not verified');
-    return true;
-  }
-  const crypto = require('crypto');
-  const computed = crypto.createHmac('sha256', process.env.FLW_SECRET_HASH)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-  return computed === signature;
-}
+const at = require('./_africastalking');
+const sms = require('./_sms');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, verif-hash');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // GET: check payment status (used by frontend polling)
   if (req.method === 'GET') {
     const { bookingId } = req.query;
     if (!bookingId) {
@@ -42,109 +27,72 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ success: false, error: 'Booking not found' });
     }
 
-    // If we have a Flutterwave charge ID and payment isn't confirmed yet, verify with Flutterwave
-    if (booking.flwChargeId && !booking.paid && process.env.FLW_SECRET_KEY) {
+    if (booking.atTransactionId && !booking.paid && at.isPaymentsEnabled()) {
       try {
-        const charge = await flw.verifyCharge(booking.flwChargeId);
-        if (charge) {
-          booking.flwStatus = charge.status;
-          if (charge.status === 'succeeded' || charge.status === 'successful') {
-            booking.paid = true;
-            booking.status = 'confirmed';
-            booking.paidAt = new Date().toISOString();
-            booking.flwProcessorResponse = charge.processor_response
-              ? (charge.processor_response.type || charge.processor_response.code)
-              : 'approved';
-            await writeBookings(bookings);
-          }
+        const txStatus = await at.checkTransactionStatus(booking.atTransactionId);
+        booking.atStatus = txStatus.status;
+
+        if (txStatus.status === 'Success') {
+          booking.paid = true;
+          booking.status = 'confirmed';
+          booking.paidAt = new Date().toISOString();
+          booking.atTxValue = txStatus.value;
+          booking.atTxFee = txStatus.transactionFee;
+          booking.atTxProvider = txStatus.provider;
+          await writeBookings(bookings);
+          sms.notifyAdminPaymentConfirmed(booking).catch(e => console.error('SMS failed:', e));
+        } else if (txStatus.status === 'Failed') {
+          booking.atTxValue = txStatus.value;
+          await writeBookings(bookings);
+          sms.notifyAdminPaymentFailed(booking).catch(e => console.error('SMS failed:', e));
         }
       } catch (e) {
-        console.error('Flutterwave charge verification failed:', e.message);
+        console.error('AT transaction lookup failed:', e.message);
       }
     }
 
-    return res.status(200).json({
-      success: true,
-      paid: booking.paid,
-      status: booking.status,
-      flwStatus: booking.flwStatus
-    });
+    return res.status(200).json({ success: true, paid: booking.paid, status: booking.status, atStatus: booking.atStatus });
   }
 
-  // POST: Flutterwave webhook
   if (req.method === 'POST') {
-    const signature = req.headers['verif-hash'];
+    const { transactionId, bookingId } = req.body;
+    if (!transactionId && !bookingId) {
+      return res.status(400).json({ success: false, error: 'Missing transactionId or bookingId' });
+    }
+    const bookings = await readBookings();
+    let booking = bookingId ? bookings.find(b => b.id === bookingId) : bookings.find(b => b.atTransactionId === transactionId);
+    if (!booking) return res.status(404).json({ success: false, error: 'Booking not found' });
 
-    // Verify webhook (skip in sandbox/dev if FLW_SECRET_HASH not set)
-    if (process.env.FLW_SECRET_HASH && !verifyWebhookSignature(req.body, signature)) {
-      return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
+    const txId = transactionId || booking.atTransactionId;
+    if (!txId || !at.isPaymentsEnabled()) {
+      return res.status(400).json({ success: false, error: 'No transaction ID or payments not configured' });
     }
 
-    const event = req.body;
+    try {
+      const txStatus = await at.checkTransactionStatus(txId);
+      booking.atStatus = txStatus.status;
+      booking.atTxValue = txStatus.value;
+      booking.atTxFee = txStatus.transactionFee;
+      booking.atTxProvider = txStatus.provider;
 
-    // We only care about charge.completed events
-    if (event.event !== 'charge.completed' && event.type !== 'charge.completed') {
-      return res.status(200).json({ success: true, message: 'Event ignored: ' + (event.event || event.type) });
-    }
-
-    const chargeData = event.data;
-    const chargeId = chargeData.id;
-    const chargeStatus = chargeData.status;
-    const bookingId = chargeData.meta && chargeData.meta.bookingId;
-
-    if (!bookingId) {
-      // Try to find booking by charge ID
-      const bookings = await readBookings();
-      const booking = bookings.find(b => b.flwChargeId === chargeId);
-      if (!booking) {
-        return res.status(200).json({ success: true, message: 'No booking found for this charge' });
-      }
-
-      // Update booking
-      booking.flwStatus = chargeStatus;
-      if (chargeStatus === 'succeeded' || chargeStatus === 'successful') {
+      if (txStatus.status === 'Success') {
         booking.paid = true;
         booking.status = 'confirmed';
-        booking.paidAt = new Date().toISOString();
-        booking.flwProcessorResponse = chargeData.processor_response
-          ? (chargeData.processor_response.type || chargeData.processor_response.code)
-          : 'approved';
-      } else if (chargeStatus === 'failed') {
-        booking.flwStatus = 'failed';
-        booking.flwProcessorResponse = chargeData.processor_response
-          ? (chargeData.processor_response.type || chargeData.processor_response.code)
-          : 'failed';
+        booking.paidAt = booking.paidAt || new Date().toISOString();
+        await writeBookings(bookings);
+        sms.notifyAdminPaymentConfirmed(booking).catch(e => console.error('SMS failed:', e));
+        return res.status(200).json({ success: true, message: 'Payment confirmed', booking: { id: booking.id, ref: booking.ref, status: booking.status, paid: booking.paid } });
+      } else if (txStatus.status === 'Failed') {
+        await writeBookings(bookings);
+        sms.notifyAdminPaymentFailed(booking).catch(e => console.error('SMS failed:', e));
+        return res.status(200).json({ success: true, message: 'Payment failed' });
+      } else {
+        await writeBookings(bookings);
+        return res.status(200).json({ success: true, message: 'Payment still pending', status: txStatus.status });
       }
-      await writeBookings(bookings);
-
-      return res.status(200).json({ success: true, message: 'Booking updated from webhook' });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: 'Transaction lookup failed: ' + e.message });
     }
-
-    // Find booking by ID from meta
-    const bookings = await readBookings();
-    const booking = bookings.find(b => b.id === bookingId);
-    if (!booking) {
-      return res.status(200).json({ success: true, message: 'Booking not found by meta id' });
-    }
-
-    booking.flwStatus = chargeStatus;
-    if (chargeStatus === 'succeeded' || chargeStatus === 'successful') {
-      booking.paid = true;
-      booking.status = 'confirmed';
-      booking.paidAt = new Date().toISOString();
-      booking.flwProcessorResponse = chargeData.processor_response
-        ? (chargeData.processor_response.type || chargeData.processor_response.code)
-        : 'approved';
-    } else if (chargeStatus === 'failed') {
-      booking.flwStatus = 'failed';
-      booking.flwProcessorResponse = chargeData.processor_response
-        ? (chargeData.processor_response.type || chargeData.processor_response.code)
-        : 'failed';
-    }
-
-    await writeBookings(bookings);
-
-    return res.status(200).json({ success: true, message: 'Booking updated' });
   }
 
   return res.status(405).json({ success: false, error: 'Method not allowed' });

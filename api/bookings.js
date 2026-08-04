@@ -1,7 +1,7 @@
-// API endpoint for bookings — supports GET (list all or single by id) and POST (create new + initiate Flutterwave charge)
+// API endpoint for bookings — supports GET (list all or single by id) and POST (create new + initiate Africa's Talking mobile checkout)
 
 const { readBookings, writeBookings } = require('./_db');
-const flw = require('./_flutterwave');
+const at = require('./_africastalking');
 const sms = require('./_sms');
 
 module.exports = async function handler(req, res) {
@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ success: true, bookings });
   }
 
-  // POST: create booking + optionally initiate Flutterwave charge
+  // POST: create booking + optionally initiate Africa's Talking mobile checkout
   if (req.method === 'POST') {
     const { name, phone, email, room, checkin, checkout, paymentMethod, deposit, total, nights, ref } = req.body;
 
@@ -88,18 +88,15 @@ module.exports = async function handler(req, res) {
       paid: false,
       createdAt: now.toISOString(),
       status: 'pending',
-      // Flutterwave tracking fields
-      flwChargeId: null,
-      flwRef: null,
-      flwStatus: null
+      atTransactionId: null,
+      atRef: null,
+      atStatus: null
     };
 
-    // If paymentMethod and deposit are provided, try to initiate payment charge
-    // Falls back gracefully if no payment API key is configured OR if API call fails
-    let flwResult = null;
+    let atResult = null;
     let paymentInitiated = false;
-    let fallbackReason = null;  // null, 'no_api_key', or 'api_error'
-    const hasPaymentAPI = !!(process.env.FLW_SECRET_KEY);
+    let fallbackReason = null;
+    const hasPaymentAPI = at.isPaymentsEnabled();
 
     if (paymentMethod && deposit > 0) {
       newBooking.paymentMethod = paymentMethod;
@@ -108,38 +105,35 @@ module.exports = async function handler(req, res) {
 
       if (hasPaymentAPI) {
         try {
-          flwResult = await flw.initiateMobileMoneyCharge({
-            name: name,
-            phone: phone,
-            email: email || ('guest-' + phone.replace(/[^0-9]/g, '') + '@nasserlodge.com'),
-            network: paymentMethod,
+          atResult = await at.initiateMobileCheckout({
+            phoneNumber: phone,
             amount: deposit,
             currency: 'ZMW',
-            reference: bookingRef,
-            meta: { bookingId: newBooking.id, room: room, checkin: checkin, checkout: checkout }
+            provider: paymentMethod,
+            metadata: { bookingId: newBooking.id, room: room, checkin: checkin, checkout: checkout, guestName: name },
+            reference: bookingRef
           });
 
-          newBooking.flwChargeId = flwResult.chargeId;
-          newBooking.flwRef = flwResult.reference;
-          newBooking.flwStatus = flwResult.status;
+          newBooking.atTransactionId = atResult.transactionId;
+          newBooking.atRef = atResult.reference;
+          newBooking.atStatus = atResult.status;
           paymentInitiated = true;
         } catch (e) {
-          console.error('Payment API failed, saving as pending:', e.message);
+          console.error('AT payment failed, saving as pending:', e.message);
           fallbackReason = 'api_error';
-          newBooking.flwStatus = 'api_unavailable';
+          newBooking.atStatus = 'api_unavailable';
         }
       } else {
         fallbackReason = 'no_api_key';
       }
-      // When no payment API is configured or API fails, booking stays pending — admin confirms manually
     }
 
     bookings.push(newBooking);
     await writeBookings(bookings);
 
-    // Send SMS notification to admin for fallback bookings
-    if (!paymentInitiated && paymentMethod) {
-      sms.notifyAdminNewBooking(newBooking, fallbackReason).catch(e => {
+    if (paymentMethod) {
+      const reason = paymentInitiated ? 'payment_initiated' : fallbackReason;
+      sms.notifyAdminNewBooking(newBooking, reason).catch(e => {
         console.error('SMS notification failed:', e);
       });
     }
@@ -149,11 +143,11 @@ module.exports = async function handler(req, res) {
       booking: newBooking,
       paymentInitiated: paymentInitiated,
       fallbackReason: fallbackReason,
-      flw: flwResult ? {
-        chargeId: flwResult.chargeId,
-        reference: flwResult.reference,
-        status: flwResult.status,
-        nextAction: flwResult.nextAction
+      at: atResult ? {
+        transactionId: atResult.transactionId,
+        reference: atResult.reference,
+        status: atResult.status,
+        description: atResult.description
       } : null
     });
   }
