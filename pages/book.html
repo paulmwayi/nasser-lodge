@@ -504,8 +504,12 @@
           document.getElementById('waiting-error').textContent = '';
           startPolling();
         } else {
-          // No payment API connected — show pending status with receipt
-          showPendingSuccess();
+          // No payment API connected or API call failed — show pending status with receipt
+          if (data.fallbackReason === 'api_error') {
+            showApiErrorSuccess();
+          } else {
+            showPendingSuccess();
+          }
         }
 
       } catch (err) {
@@ -522,6 +526,18 @@
         '. Please pay ZMW ' + paymentAmount.toLocaleString() +
         ' via ' + PROVIDER_NAMES[selectedProvider] +
         ' at the lodge or through our payment channels. Your room is reserved.';
+      document.getElementById('popup-step-success').style.display = 'block';
+      setStep(3);
+    }
+
+    function showApiErrorSuccess() {
+      document.getElementById('popup-step-amount').style.display = 'none';
+      document.getElementById('success-msg').textContent =
+        'Booking saved! Your reference is ' + bookingRef +
+        '. Our payment system is temporarily unavailable but your room is reserved. ' +
+        'Please pay ZMW ' + paymentAmount.toLocaleString() +
+        ' via ' + PROVIDER_NAMES[selectedProvider] +
+        ' at the lodge. We\'ll send a confirmation once processed.';
       document.getElementById('popup-step-success').style.display = 'block';
       setStep(3);
     }

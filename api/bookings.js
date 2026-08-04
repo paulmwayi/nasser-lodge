@@ -95,9 +95,10 @@ module.exports = async function handler(req, res) {
     };
 
     // If paymentMethod and deposit are provided, try to initiate payment charge
-    // Falls back gracefully if no payment API key is configured
+    // Falls back gracefully if no payment API key is configured OR if API call fails
     let flwResult = null;
     let paymentInitiated = false;
+    let fallbackReason = null;  // null, 'no_api_key', or 'api_error'
     const hasPaymentAPI = !!(process.env.FLW_SECRET_KEY);
 
     if (paymentMethod && deposit > 0) {
@@ -123,19 +124,22 @@ module.exports = async function handler(req, res) {
           newBooking.flwStatus = flwResult.status;
           paymentInitiated = true;
         } catch (e) {
-          console.error('Payment initiation failed, saving as pending:', e.message);
-          // Falls through — booking saved as pending
+          console.error('Payment API failed, saving as pending:', e.message);
+          fallbackReason = 'api_error';
+          newBooking.flwStatus = 'api_unavailable';
         }
+      } else {
+        fallbackReason = 'no_api_key';
       }
-      // When no payment API is configured, booking stays pending — admin confirms manually
+      // When no payment API is configured or API fails, booking stays pending — admin confirms manually
     }
 
     bookings.push(newBooking);
     await writeBookings(bookings);
 
-    // Send SMS notification to admin for fallback (pending payment) bookings
+    // Send SMS notification to admin for fallback bookings
     if (!paymentInitiated && paymentMethod) {
-      sms.notifyAdminNewBooking(newBooking).catch(e => {
+      sms.notifyAdminNewBooking(newBooking, fallbackReason).catch(e => {
         console.error('SMS notification failed:', e);
       });
     }
@@ -144,6 +148,7 @@ module.exports = async function handler(req, res) {
       success: true,
       booking: newBooking,
       paymentInitiated: paymentInitiated,
+      fallbackReason: fallbackReason,
       flw: flwResult ? {
         chargeId: flwResult.chargeId,
         reference: flwResult.reference,

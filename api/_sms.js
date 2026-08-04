@@ -58,18 +58,21 @@ async function sendSms(to, message) {
 }
 
 // Send booking notification to admin
-async function notifyAdminNewBooking(booking) {
+async function notifyAdminNewBooking(booking, reason) {
   if (!isSmsEnabled()) return { sent: false };
 
   const nights = booking.nights || 1;
   const nightLabel = nights === 1 ? 'night' : 'nights';
+  const reasonTag = reason === 'api_error'
+    ? 'PAYMENT API DOWN — confirm manually'
+    : 'PENDING — confirm in admin';
   const msg = [
     `Nasser Lodge Booking`,
     `${booking.name} — ${booking.ref}`,
     `${booking.room} | ${booking.checkin} to ${booking.checkout} (${nights} ${nightLabel})`,
     `Total: ZMW ${(booking.total || 0).toLocaleString()} | Deposit: ZMW ${(booking.deposit || 0).toLocaleString()}`,
     `${booking.phone}`,
-    `Status: PENDING — confirm in admin`
+    `Status: ${reasonTag}`
   ].join('\n');
 
   return await sendSms(ADMIN_PHONE, msg);
