@@ -137,11 +137,14 @@ h3 {
   left: 0;
   right: 0;
   z-index: var(--z-nav);
-  padding: 1.5rem var(--space-lg);
+  padding: 0.75rem var(--space-lg);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background 0.4s ease, padding 0.4s ease;
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(200, 148, 74, 0.1);
 }
 
 .nav--scrolled {
@@ -158,6 +161,14 @@ h3 {
   color: var(--color-gold);
   letter-spacing: 0.04em;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.nav__logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
 }
 
 .nav__links {

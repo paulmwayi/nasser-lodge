@@ -4,22 +4,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ----- Navigation Scroll Effect ----- */
+  /* ----- Mobile Nav Toggle ----- */
   const nav = document.querySelector('.nav');
   const navToggle = document.querySelector('.nav__toggle');
   const navLinks = document.querySelector('.nav__links');
   const navLinkItems = document.querySelectorAll('.nav__links a');
 
-  function updateNav() {
-    if (window.scrollY > 60) {
-      nav.classList.add('nav--scrolled');
-    } else {
-      nav.classList.remove('nav--scrolled');
-    }
-  }
-
-  window.addEventListener('scroll', updateNav, { passive: true });
-  updateNav();
+  // Nav is always visible (static) — no scroll-based class changes
 
   /* ----- Mobile Nav Toggle ----- */
   navToggle.addEventListener('click', () => {
