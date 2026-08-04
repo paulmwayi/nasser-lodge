@@ -101,7 +101,7 @@
   <table class="bookings-table" id="bookings-table" style="display:none;">
     <thead>
       <tr>
-        <th>Ref</th><th>Guest</th><th>Phone</th><th>Room</th><th>Check-in</th><th>Check-out</th>
+        <th>Ref</th><th>Guest</th><th>Phone</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Nights</th>
         <th>Total</th><th>Paid</th><th>Balance</th><th>Method</th><th>Status</th><th>Actions</th>
       </tr>
     </thead>
@@ -191,6 +191,7 @@ function renderTable() {
       '<td data-label="Room">' + (b.room || '-') + '</td>' +
       '<td data-label="Check-in">' + fmtDate(b.checkin) + '</td>' +
       '<td data-label="Check-out">' + fmtDate(b.checkout) + '</td>' +
+      '<td data-label="Nights">' + (b.nights || '-') + '</td>' +
       '<td data-label="Total">ZMW ' + (b.total || 0).toLocaleString() + '</td>' +
       '<td data-label="Paid">ZMW ' + (b.deposit || 0).toLocaleString() + '</td>' +
       '<td data-label="Balance">ZMW ' + (b.balance || 0).toLocaleString() + '</td>' +
