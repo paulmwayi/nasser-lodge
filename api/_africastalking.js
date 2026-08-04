@@ -23,9 +23,8 @@ function isSandbox() {
 }
 
 function baseURL() {
-  return isSandbox()
-    ? 'https://payments.sandbox.africastalking.com'
-    : 'https://payments.africastalking.com';
+  // AT sandbox domain doesn't resolve from Vercel edge — always use live
+  return 'https://payments.africastalking.com';
 }
 
 function isPaymentsEnabled() {
