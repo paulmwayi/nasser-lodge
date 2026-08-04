@@ -100,12 +100,13 @@
     @media print { body * { visibility: hidden; } .receipt-overlay, .receipt-overlay * { visibility: visible; } .receipt-overlay { position: absolute; inset: 0; background: #fff; display: flex; margin: 0; padding: 0; } .receipt { box-shadow: none; border-radius: 0; max-width: 100%; } .receipt__actions { display: none; } }
     @media (max-width: 900px) { .booking-layout { grid-template-columns: 1fr; gap: var(--space-xl); } }
     @media (max-width: 480px) { .booking-form-wrapper { padding: var(--space-lg); } .receipt__body, .receipt__header, .receipt__footer { padding-left: 1rem; padding-right: 1rem; } }
+.nav__logo-img { height: 38px; width: auto; display: block; }
   </style>
 </head>
 <body>
 
   <nav class="nav nav--scrolled" role="navigation" aria-label="Main navigation">
-    <a href="../index.html" class="nav__logo">Nasser Lodge</a>
+    <a href="../index.html" class="nav__logo"><img src="../assets/logo.png" alt="Nasser Lodge" class="nav__logo-img"></a>
     <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -148,6 +149,16 @@
             <div class="form-group">
               <label class="form-label" for="phone">Phone Number (WhatsApp) *</label>
               <div class="input-with-prefix"><span class="input-prefix">+260</span><input type="tel" id="phone" name="phone" required placeholder="9XX XXX XXX" autocomplete="tel"></div>
+            </div>
+            <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+              <div>
+                <label class="form-label" for="checkin">Check-in *</label>
+                <input class="form-input" type="date" id="checkin" name="checkin" required>
+              </div>
+              <div>
+                <label class="form-label" for="checkout">Check-out *</label>
+                <input class="form-input" type="date" id="checkout" name="checkout" required>
+              </div>
             </div>
             <p class="form-intro">How it works: Enter your details, choose a payment method below, and we'll send you the exact deposit amount via WhatsApp. Once you pay, you'll receive a <strong>digital receipt</strong> you can print and present at check-in.</p>
             <button type="submit" class="btn btn--primary" style="width:100%;" id="submit-btn">Continue to Payment</button>
@@ -217,7 +228,7 @@
     <div>
       <div class="receipt" id="receipt">
         <div class="receipt__header">
-          <div class="receipt__logo">Nasser Lodge</div>
+          <img src="assets/logo.png" alt="Nasser Lodge" style="width:80px;height:auto;display:block;margin:0 auto 4px;">
           <div class="receipt__tagline">Where luxury feels like home</div>
           <div class="receipt__addr">Mongu, Western Province, Zambia</div>
         </div>
@@ -228,6 +239,7 @@
           <div class="receipt__row"><span class="label">Ref</span><span class="value" id="receipt-ref2">-</span></div>
           <div class="receipt__row"><span class="label">Room</span><span class="value" id="receipt-room">-</span></div>
           <div class="receipt__row"><span class="label">Check-in</span><span class="value" id="receipt-checkin">-</span></div>
+          <div class="receipt__row"><span class="label">Check-out</span><span class="value" id="receipt-checkout">-</span></div>
           <div class="receipt__row"><span class="label">Payment</span><span class="value" id="receipt-method">-</span></div>
           <div class="receipt__row"><span class="label">Deposit</span><span class="value" id="receipt-amount">ZMW 250</span></div>
           <div class="receipt__row"><span class="label">Issued</span><span class="value" id="receipt-date">-</span></div>
@@ -276,9 +288,11 @@
     /* Form submit */
     document.getElementById('booking-form').addEventListener('submit', function(e) {
       e.preventDefault();
+      var checkin = document.getElementById('checkin').value;
+      var checkout = document.getElementById('checkout').value;
       guestName = document.getElementById('fullname').value.trim();
       guestPhone = document.getElementById('phone').value.trim();
-      if (!guestName || !guestPhone) return;
+      if (!guestName || !guestPhone || !checkin || !checkout) return;
 
       // Enable payment column
       var pc = document.getElementById('payment-column');
@@ -286,9 +300,14 @@
       pc.style.pointerEvents = 'auto';
       setStep(2);
 
+      // Store dates globally
+      window._checkin = checkin;
+      window._checkout = checkout;
       // Disable form
       document.getElementById('fullname').disabled = true;
       document.getElementById('phone').disabled = true;
+      document.getElementById('checkin').disabled = true;
+      document.getElementById('checkout').disabled = true;
       document.getElementById('submit-btn').textContent = 'Details Saved';
       document.getElementById('submit-btn').disabled = true;
       document.getElementById('submit-btn').style.opacity = '0.6';
@@ -297,14 +316,38 @@
       pc.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
       // Send WhatsApp
+      var checkinDate = formatDateReadable(checkin);
+      var checkoutDate = formatDateReadable(checkout);
       var msg = encodeURIComponent(
         'Hello Nasser Lodge! I\'d like to book a room.\n\n' +
         'Name: ' + guestName + '\n' +
-        'Phone: +260 ' + guestPhone + '\n\n' +
+        'Phone: +260 ' + guestPhone + '\n' +
+        'Check-in: ' + checkinDate + '\n' +
+        'Check-out: ' + checkoutDate + '\n\n' +
         'Please confirm availability and deposit amount.'
       );
       setTimeout(function() { window.open('https://wa.me/260976327007?text=' + msg, '_blank'); }, 1000);
     });
+
+    /* Helper: format ISO date to readable */
+    function formatDateReadable(iso) {
+      if (!iso) return 'Confirm via WhatsApp';
+      var parts = iso.split('-');
+      var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return parts[2] + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0];
+    }
+
+    /* Set minimum check-in date to today */
+    (function() {
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('checkin').setAttribute('min', today);
+      document.getElementById('checkin').addEventListener('change', function() {
+        document.getElementById('checkout').setAttribute('min', this.value);
+      });
+      document.getElementById('checkout').addEventListener('change', function() {
+        document.getElementById('checkin').setAttribute('max', this.value);
+      });
+    })();
 
     /* Payment provider selection */
     function selectProvider(provider) {
@@ -350,6 +393,9 @@
 
       var dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
+      var checkinReadable = formatDateReadable(window._checkin || '');
+      var checkoutReadable = formatDateReadable(window._checkout || '');
+
       document.getElementById('receipt-ref').textContent = refNum;
       document.getElementById('receipt-ref2').textContent = refNum;
       document.getElementById('receipt-name').textContent = guestName;
@@ -357,11 +403,11 @@
       document.getElementById('receipt-method').textContent = providerNames[selectedProvider];
       document.getElementById('receipt-date').textContent = dateStr;
 
-      // Room type and check-in: use localStorage if set from WhatsApp, else show placeholder
+      // Room type: use localStorage if set, else show placeholder
       var roomType = localStorage.getItem('nl_room_type') || 'Confirm via WhatsApp';
-      var checkinDate = localStorage.getItem('nl_checkin') || 'Confirm via WhatsApp';
       document.getElementById('receipt-room').textContent = roomType;
-      document.getElementById('receipt-checkin').textContent = checkinDate;
+      document.getElementById('receipt-checkin').textContent = checkinReadable;
+      document.getElementById('receipt-checkout').textContent = checkoutReadable;
 
       // Generate simple barcode lines from the ref number
       var svg = document.getElementById('receipt-barcode');
