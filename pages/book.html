@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Book your stay at Nasser Lodge, Mongu — pay deposit via Airtel Money, MTN MoMo, or Zamtel Kwacha and receive a digital receipt.">
+  <title>Book Your Stay — Nasser Lodge | Mongu, Zambia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .page-header { padding: 10rem var(--space-lg) var(--space-xl); text-align: center; background: var(--color-bg-warm); }
+    .page-body { padding: var(--space-2xl) var(--space-lg); max-width: var(--max-width); margin: 0 auto; }
+    .booking-layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2xl); align-items: start; }
+    .booking-form-wrapper { background: var(--color-surface); border: 1px solid rgba(200,148,74,0.1); border-radius: 16px; padding: var(--space-2xl); }
+    .booking-form-wrapper h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: var(--space-sm); }
+    .booking-form-wrapper > p { color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.7; margin-bottom: var(--space-xl); }
+    .booking-steps { display: flex; gap: var(--space-sm); margin-bottom: var(--space-xl); }
+    .booking-step { flex: 1; text-align: center; padding: 0.6rem 0.5rem; border-radius: 8px; background: var(--color-bg-deep); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); transition: all 0.3s ease; }
+    .booking-step--active { background: rgba(200,148,74,0.12); color: var(--color-gold); }
+    .booking-step--done { background: rgba(90,125,74,0.12); color: var(--color-accent-green); }
+    .booking-step__num { display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; font-size: 0.65rem; margin-right: 3px; }
+    .booking-step--active .booking-step__num { background: var(--color-gold); color: #0d0d0d; }
+    .booking-step--done .booking-step__num { background: var(--color-accent-green); color: #fff; }
+    .form-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-lg); padding: var(--space-md); background: var(--color-bg-deep); border-radius: 8px; border-left: 3px solid var(--color-gold); }
+    .booking-form-wrapper .form-group { margin-bottom: var(--space-lg); }
+    .booking-form-wrapper .form-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; }
+    .booking-form-wrapper .form-input { font-size: 1rem; padding: 1rem; background: var(--color-bg-deep); border-color: rgba(200,148,74,0.12); }
+    .booking-form-wrapper .form-input:focus { border-color: var(--color-gold); box-shadow: 0 0 0 3px rgba(200,148,74,0.08); }
+    .input-with-prefix { display: flex; background: var(--color-bg-deep); border: 1px solid rgba(200,148,74,0.12); border-radius: 8px; overflow: hidden; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
+    .input-with-prefix:focus-within { border-color: var(--color-gold); box-shadow: 0 0 0 3px rgba(200,148,74,0.08); }
+    .input-prefix { display: flex; align-items: center; padding: 0 0.8rem; font-weight: 600; font-size: 0.95rem; color: var(--color-text-muted); background: rgba(200,148,74,0.04); border-right: 1px solid rgba(200,148,74,0.1); white-space: nowrap; }
+    .input-with-prefix input { flex: 1; background: transparent; border: none; padding: 1rem; color: var(--color-text-primary); font-family: var(--font-body); font-size: 1rem; outline: none; }
+    .section-heading { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-text-primary); margin-bottom: var(--space-sm); }
+    .section-subtext { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-lg); }
+    .wallet-cards { display: flex; flex-direction: column; gap: var(--space-md); }
+    .wallet-card { border-radius: 16px; padding: var(--space-lg); cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; border: 2px solid transparent; }
+    .wallet-card:hover { transform: translateY(-2px); }
+    .wallet-card--selected { border-color: var(--color-gold) !important; box-shadow: 0 0 0 4px rgba(200,148,74,0.08); }
+    .wallet-card--selected::after { content: '\2713'; position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--color-gold); color: #0d0d0d; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; z-index: 2; }
+    /* AIRTEL */
+    .wallet-card--airtel { background: linear-gradient(135deg, #E60000 0%, #B80000 100%); }
+    .wallet-card--airtel .wallet-card__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-lg); }
+    .wallet-card--airtel .wallet-logo { display: flex; align-items: center; gap: 8px; }
+    .wallet-card--airtel .wallet-logo svg { width: 36px; height: 36px; }
+    .wallet-card--airtel .wallet-name { font-weight: 700; font-size: 0.95rem; color: #fff; letter-spacing: 0.02em; }
+    .wallet-card--airtel .wallet-tag { font-size: 0.65rem; color: rgba(255,255,255,0.7); font-weight: 400; }
+    .wallet-card--airtel .wallet-chip { width: 40px; height: 30px; background: linear-gradient(135deg, #FFB800, #FF8C00); border-radius: 6px; opacity: 0.9; }
+    .wallet-card--airtel .wallet-number { font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 0.06em; color: #fff; margin-bottom: var(--space-sm); user-select: all; }
+    .wallet-card--airtel .wallet-holder { display: flex; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.65); }
+    /* MTN */
+    .wallet-card--mtn { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 2px solid #FFCC00; }
+    .wallet-card--mtn .wallet-card__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-lg); }
+    .wallet-card--mtn .wallet-logo { display: flex; align-items: center; gap: 8px; }
+    .wallet-card--mtn .wallet-logo svg { width: 36px; height: 36px; }
+    .wallet-card--mtn .wallet-name { font-weight: 700; font-size: 0.95rem; color: #FFCC00; letter-spacing: 0.02em; }
+    .wallet-card--mtn .wallet-tag { font-size: 0.65rem; color: rgba(255,204,0,0.5); font-weight: 400; }
+    .wallet-card--mtn .wallet-chip { width: 40px; height: 30px; background: linear-gradient(135deg, #FFCC00, #E6B800); border-radius: 6px; opacity: 0.9; }
+    .wallet-card--mtn .wallet-number { font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 0.06em; color: #FFCC00; margin-bottom: var(--space-sm); user-select: all; }
+    .wallet-card--mtn .wallet-holder { display: flex; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); }
+    /* ZAMTEL */
+    .wallet-card--zamtel { background: linear-gradient(135deg, #006838 0%, #004d28 100%); }
+    .wallet-card--zamtel .wallet-card__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-lg); }
+    .wallet-card--zamtel .wallet-logo { display: flex; align-items: center; gap: 8px; }
+    .wallet-card--zamtel .wallet-logo svg { width: 36px; height: 36px; }
+    .wallet-card--zamtel .wallet-name { font-weight: 700; font-size: 0.95rem; color: #fff; letter-spacing: 0.02em; }
+    .wallet-card--zamtel .wallet-tag { font-size: 0.65rem; color: rgba(255,255,255,0.6); font-weight: 400; }
+    .wallet-card--zamtel .wallet-chip { width: 40px; height: 30px; background: linear-gradient(135deg, #00C853, #009624); border-radius: 6px; opacity: 0.9; }
+    .wallet-card--zamtel .wallet-number { font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 0.06em; color: #fff; margin-bottom: var(--space-sm); user-select: all; }
+    .wallet-card--zamtel .wallet-holder { display: flex; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.55); }
+    .payment-instruction { display: none; background: var(--color-bg-deep); border: 1px solid rgba(200,148,74,0.1); border-radius: 12px; padding: var(--space-lg); margin-top: var(--space-lg); }
+    .payment-instruction--visible { display: block; }
+    .payment-instruction h4 { font-family: var(--font-display); font-size: 1rem; color: var(--color-gold); margin-bottom: var(--space-md); }
+    .payment-instruction ol { list-style: none; counter-reset: paystep; padding: 0; }
+    .payment-instruction ol li { counter-increment: paystep; font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.8; padding-left: 2rem; position: relative; }
+    .payment-instruction ol li::before { content: counter(paystep); position: absolute; left: 0; top: 0.15rem; width: 20px; height: 20px; background: var(--color-surface); border: 1px solid rgba(200,148,74,0.2); color: var(--color-gold); font-size: 0.65rem; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .payment-instruction .ussd-code { display: inline-block; background: rgba(200,148,74,0.1); color: var(--color-gold-light); font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; letter-spacing: 0.04em; }
+    .confirm-section { margin-top: var(--space-xl); text-align: center; }
+    .confirm-note { font-size: 0.75rem; color: var(--color-text-muted); margin-top: var(--space-md); line-height: 1.6; }
+    .receipt-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,13,0.95); z-index: var(--z-modal); align-items: center; justify-content: center; padding: var(--space-lg); overflow-y: auto; }
+    .receipt-overlay--visible { display: flex; }
+    .receipt { background: #fff; color: #1a1a1a; max-width: 480px; width: 100%; border-radius: 4px; font-family: 'Courier New', monospace; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .receipt__header { text-align: center; padding: 2rem 2rem 1rem; border-bottom: 2px dashed #ccc; }
+    .receipt__logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .receipt__tagline { font-size: 0.7rem; color: #888; letter-spacing: 0.1em; text-transform: uppercase; }
+    .receipt__body { padding: 1.5rem 2rem; }
+    .receipt__row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.8rem; border-bottom: 1px dotted #eee; }
+    .receipt__row .label { color: #666; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.08em; }
+    .receipt__row .value { font-weight: 700; text-align: right; }
+    .receipt__ref { text-align: center; padding: 1rem 0; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.1em; color: #c8944a; }
+    .receipt__footer { text-align: center; padding: 1.5rem 2rem 2rem; border-top: 2px dashed #ccc; font-size: 0.7rem; color: #888; line-height: 1.8; }
+    .receipt__barcode { text-align: center; padding: 0.5rem 0; }
+    .receipt__actions { display: flex; gap: var(--space-md); justify-content: center; margin-top: var(--space-xl); }
+    .receipt__print-btn, .receipt__close-btn { padding: 0.7rem 1.5rem; border-radius: 100px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; font-family: var(--font-body); }
+    .receipt__print-btn { background: #c8944a; color: #fff; }
+    .receipt__print-btn:hover { background: #b8843a; }
+    .receipt__close-btn { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    .receipt__close-btn:hover { border-color: #fff; }
+    @media print { body * { visibility: hidden; } .receipt-overlay, .receipt-overlay * { visibility: visible; } .receipt-overlay { position: absolute; inset: 0; background: #fff; display: flex; margin: 0; padding: 0; } .receipt { box-shadow: none; border-radius: 0; max-width: 100%; } .receipt__actions { display: none; } }
+    @media (max-width: 900px) { .booking-layout { grid-template-columns: 1fr; gap: var(--space-xl); } }
+    @media (max-width: 480px) { .booking-form-wrapper { padding: var(--space-lg); } .receipt__body, .receipt__header, .receipt__footer { padding-left: 1rem; padding-right: 1rem; } }
+  </style>
+</head>
+<body>
+
+  <nav class="nav nav--scrolled" role="navigation" aria-label="Main navigation">
+    <a href="../index.html" class="nav__logo">Nasser Lodge</a>
+    <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav__links">
+      <li><a href="../index.html#rooms">Rooms</a></li>
+      <li><a href="../index.html#dining">Dining</a></li>
+      <li><a href="../index.html#location">Location</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="book.html" style="color:var(--color-gold);">Book Now</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-header">
+    <span class="section-label">Reservations</span>
+    <h1>Book Your Stay</h1>
+    <p class="subtitle" style="margin:var(--space-md) auto 0;">
+      Enter your details, pay your deposit via mobile money,
+      and receive your digital receipt instantly.
+    </p>
+  </header>
+
+  <main class="page-body">
+    <div class="booking-layout">
+
+      <div>
+        <div class="booking-steps" id="step-indicator">
+          <div class="booking-step booking-step--active" data-step="1"><span class="booking-step__num">1</span> Your Details</div>
+          <div class="booking-step" data-step="2"><span class="booking-step__num">2</span> Pay Deposit</div>
+          <div class="booking-step" data-step="3"><span class="booking-step__num">3</span> Receipt</div>
+        </div>
+
+        <div class="booking-form-wrapper">
+          <h2>Step 1: Your Details</h2>
+          <p>Just your name and phone number — we'll confirm your booking and send you payment instructions via WhatsApp.</p>
+          <form id="booking-form" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="fullname">Full Name *</label>
+              <input class="form-input" type="text" id="fullname" name="fullname" required placeholder="e.g. Mwayi Moonga" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="phone">Phone Number (WhatsApp) *</label>
+              <div class="input-with-prefix"><span class="input-prefix">+260</span><input type="tel" id="phone" name="phone" required placeholder="9XX XXX XXX" autocomplete="tel"></div>
+            </div>
+            <p class="form-intro">How it works: Enter your details, choose a payment method below, and we'll send you the exact deposit amount via WhatsApp. Once you pay, you'll receive a <strong>digital receipt</strong> you can print and present at check-in.</p>
+            <button type="submit" class="btn btn--primary" style="width:100%;" id="submit-btn">Continue to Payment</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="payment-column" style="opacity:0.5; pointer-events:none; transition: opacity 0.4s ease;">
+        <h3 class="section-heading">Step 2: Pay with Mobile Money</h3>
+        <p class="section-subtext">Select your mobile money provider below. After you send the deposit, tap "I've Paid" to generate your digital receipt.</p>
+
+        <div class="wallet-cards">
+
+          <div class="wallet-card wallet-card--airtel" data-provider="airtel" onclick="selectProvider('airtel')">
+            <div class="wallet-card__top">
+              <div class="wallet-logo">
+                <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="white" opacity="0.15"/><path d="M18 42V18l12 12-12 12z" fill="white"/><path d="M30 30l12-12v24L30 30z" fill="white" opacity="0.7"/></svg>
+                <div><div class="wallet-name">Airtel Money</div><div class="wallet-tag">Dial *115#</div></div>
+              </div>
+              <div class="wallet-chip"></div>
+            </div>
+            <div class="wallet-number">0976 327 007</div>
+            <div class="wallet-holder"><span>Account: Nasser Lodge</span><span>Airtel ZM</span></div>
+          </div>
+
+          <div class="wallet-card wallet-card--mtn" data-provider="mtn" onclick="selectProvider('mtn')">
+            <div class="wallet-card__top">
+              <div class="wallet-logo">
+                <svg viewBox="0 0 60 60"><rect x="8" y="16" width="44" height="28" rx="4" fill="#FFCC00"/><text x="30" y="36" text-anchor="middle" font-size="14" font-weight="900" fill="#1a1a1a" font-family="sans-serif">MoMo</text></svg>
+                <div><div class="wallet-name">MTN Mobile Money</div><div class="wallet-tag">Dial *115#</div></div>
+              </div>
+              <div class="wallet-chip"></div>
+            </div>
+            <div class="wallet-number">0976 327 007</div>
+            <div class="wallet-holder"><span>Account: Nasser Lodge</span><span>MTN ZM</span></div>
+          </div>
+
+          <div class="wallet-card wallet-card--zamtel" data-provider="zamtel" onclick="selectProvider('zamtel')">
+            <div class="wallet-card__top">
+              <div class="wallet-logo">
+                <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="26" stroke="white" stroke-width="3" fill="none" opacity="0.8"/><path d="M15 34l10-14H35l-10 14" fill="white" opacity="0.8"/><rect x="20" y="24" width="20" height="3" rx="1.5" fill="white" opacity="0.9"/></svg>
+                <div><div class="wallet-name">Zamtel Kwacha</div><div class="wallet-tag">Dial *115#</div></div>
+              </div>
+              <div class="wallet-chip"></div>
+            </div>
+            <div class="wallet-number">0976 327 007</div>
+            <div class="wallet-holder"><span>Account: Nasser Lodge</span><span>Zamtel ZM</span></div>
+          </div>
+
+        </div>
+
+        <div class="payment-instruction" id="payment-instruction">
+          <h4 id="payment-instruction-title">How to pay</h4>
+          <ol id="payment-instruction-steps"></ol>
+        </div>
+
+        <div class="confirm-section" id="confirm-section" style="display:none;">
+          <button class="btn btn--primary" style="width:100%;" onclick="generateReceipt()">I've Paid - Get My Receipt</button>
+          <p class="confirm-note">After sending your deposit, tap the button above. You'll receive a <strong>digital receipt</strong> with a booking reference - print it or show it on your phone at check-in.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="receipt-overlay" id="receipt-overlay">
+    <div>
+      <div class="receipt" id="receipt">
+        <div class="receipt__header">
+          <div class="receipt__logo">Nasser Lodge</div>
+          <div class="receipt__tagline">Where luxury feels like home</div>
+          <div class="receipt__addr">Mongu, Western Province, Zambia</div>
+        </div>
+        <div class="receipt__body">
+          <div class="receipt__ref" id="receipt-ref">NL-2026-0001</div>
+          <div class="receipt__row"><span class="label">Guest</span><span class="value" id="receipt-name">-</span></div>
+          <div class="receipt__row"><span class="label">Phone</span><span class="value" id="receipt-phone">-</span></div>
+          <div class="receipt__row"><span class="label">Ref</span><span class="value" id="receipt-ref2">-</span></div>
+          <div class="receipt__row"><span class="label">Room</span><span class="value" id="receipt-room">-</span></div>
+          <div class="receipt__row"><span class="label">Check-in</span><span class="value" id="receipt-checkin">-</span></div>
+          <div class="receipt__row"><span class="label">Payment</span><span class="value" id="receipt-method">-</span></div>
+          <div class="receipt__row"><span class="label">Deposit</span><span class="value" id="receipt-amount">ZMW 250</span></div>
+          <div class="receipt__row"><span class="label">Issued</span><span class="value" id="receipt-date">-</span></div>
+          <div class="receipt__row"><span class="label">Status</span><span class="value" style="color:#006838;">CONFIRMED</span></div>
+          <div class="receipt__barcode"><svg id="receipt-barcode" width="160" height="24" viewBox="0 0 160 24"></svg></div>
+        </div>
+        <div class="receipt__footer">
+          <strong>Check-in:</strong> Present this receipt at reception. Remaining balance payable on arrival.<br>
+          <strong>Cancellation &amp; Refund:</strong> Free cancellation 48h+ before check-in — full deposit refunded. Within 48h: deposit non-refundable. No-shows forfeit deposit. Date changes free 48h+ before, subject to availability. Approved refunds processed within 3–5 business days via same mobile money number. Refund sent to registered phone only. Transaction reference shared upon completion.<br>
+          <strong>Changes?</strong> Call or WhatsApp us.<br>
+          P4HQ+W93, Lusaka Road, Mongu &bull; +260 976 327 007 &bull; nasserlodges49@gmail.com<br>
+          <em>Thank you for choosing Nasser Lodge.</em>
+        </div>
+      </div>
+      <div class="receipt__actions">
+        <button class="receipt__print-btn" onclick="window.print()">Print Receipt</button>
+        <button class="receipt__close-btn" onclick="closeReceipt()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <div class="footer__inner">
+      <div><div class="footer__brand">Nasser Lodge</div><p class="footer__desc">Where luxury feels like home. Premium accommodation in Mongu, Western Province, Zambia.</p></div>
+      <div><div class="footer__heading">Quick Links</div><ul class="footer__links"><li><a href="../index.html#rooms">Rooms</a></li><li><a href="../index.html#dining">Dining</a></li><li><a href="../index.html#location">Location</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="book.html">Book Now</a></li></ul></div>
+      <div><div class="footer__heading">Contact</div><ul class="footer__links"><li>P4HQ+W93, Lusaka Road, Mongu</li><li><a href="tel:+260976327007">+260 976 327 007</a></li><li><a href="mailto:nasserlodges49@gmail.com">nasserlodges49@gmail.com</a></li><li><a href="https://facebook.com/nasserlodge" target="_blank" rel="noopener">Facebook</a></li></ul></div>
+    </div>
+    <div class="footer__bottom"><span>&copy; <span id="current-year">2026</span> Nasser Lodge. All rights reserved.</span><span>Mongu, Western Province, Zambia</span></div>
+  </footer>
+
+  <script>
+    var selectedProvider = null;
+    var guestName = '';
+    var guestPhone = '';
+
+    /* Step indicator */
+    function setStep(n) {
+      document.querySelectorAll('.booking-step').forEach(function(el) {
+        var s = parseInt(el.dataset.step);
+        el.classList.remove('booking-step--active', 'booking-step--done');
+        if (s < n) el.classList.add('booking-step--done');
+        if (s === n) el.classList.add('booking-step--active');
+      });
+    }
+
+    /* Form submit */
+    document.getElementById('booking-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      guestName = document.getElementById('fullname').value.trim();
+      guestPhone = document.getElementById('phone').value.trim();
+      if (!guestName || !guestPhone) return;
+
+      // Enable payment column
+      var pc = document.getElementById('payment-column');
+      pc.style.opacity = '1';
+      pc.style.pointerEvents = 'auto';
+      setStep(2);
+
+      // Disable form
+      document.getElementById('fullname').disabled = true;
+      document.getElementById('phone').disabled = true;
+      document.getElementById('submit-btn').textContent = 'Details Saved';
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('submit-btn').style.opacity = '0.6';
+
+      // Scroll to payment
+      pc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Send WhatsApp
+      var msg = encodeURIComponent(
+        'Hello Nasser Lodge! I\'d like to book a room.\n\n' +
+        'Name: ' + guestName + '\n' +
+        'Phone: +260 ' + guestPhone + '\n\n' +
+        'Please confirm availability and deposit amount.'
+      );
+      setTimeout(function() { window.open('https://wa.me/260976327007?text=' + msg, '_blank'); }, 1000);
+    });
+
+    /* Payment provider selection */
+    function selectProvider(provider) {
+      selectedProvider = provider;
+      document.querySelectorAll('.wallet-card').forEach(function(c) { c.classList.remove('wallet-card--selected'); });
+      document.querySelector('.wallet-card[data-provider="' + provider + '"]').classList.add('wallet-card--selected');
+
+      var steps = {
+        airtel: ['Dial <span class="ussd-code">*115#</span> on your Airtel line','Select <strong>Send Money</strong>','Enter recipient: <strong>0976 327 007</strong> (Nasser Lodge)','Enter the deposit amount (we will confirm the exact amount via WhatsApp)','Enter your PIN and confirm','Share the transaction confirmation with us via WhatsApp'],
+        mtn: ['Dial <span class="ussd-code">*115#</span> on your MTN line','Select <strong>Send Money</strong> or <strong>MoMoPay</strong>','Enter recipient: <strong>0976 327 007</strong> (Nasser Lodge)','Enter the deposit amount (we will confirm the exact amount via WhatsApp)','Enter your MoMo PIN and confirm','Share the transaction confirmation with us via WhatsApp'],
+        zamtel: ['Dial <span class="ussd-code">*115#</span> on your Zamtel line','Select <strong>Send Money</strong>','Enter recipient: <strong>0976 327 007</strong> (Nasser Lodge)','Enter the deposit amount (we will confirm the exact amount via WhatsApp)','Enter your PIN and confirm','Share the transaction confirmation with us via WhatsApp']
+      };
+
+      var ol = document.getElementById('payment-instruction-steps');
+      ol.innerHTML = '';
+      steps[provider].forEach(function(s) {
+        var li = document.createElement('li');
+        li.innerHTML = s;
+        ol.appendChild(li);
+      });
+
+      var titles = { airtel: 'How to pay with Airtel Money', mtn: 'How to pay with MTN MoMo', zamtel: 'How to pay with Zamtel Kwacha' };
+      document.getElementById('payment-instruction-title').textContent = titles[provider];
+      document.getElementById('payment-instruction').classList.add('payment-instruction--visible');
+      document.getElementById('confirm-section').style.display = 'block';
+      setStep(2);
+    }
+
+    /* Generate receipt */
+    function generateReceipt() {
+      if (!selectedProvider || !guestName) return;
+      setStep(3);
+
+      var providerNames = { airtel: 'Airtel Money', mtn: 'MTN Mobile Money (MoMo)', zamtel: 'Zamtel Kwacha' };
+      var now = new Date();
+
+      // Booking ref format: NL-YYYYMMDD-XXXX (year-month-day-random)
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      var rand = String(Math.floor(Math.random() * 9000) + 1000);
+      var refNum = 'NL-' + y + m + d + '-' + rand;
+
+      var dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+      document.getElementById('receipt-ref').textContent = refNum;
+      document.getElementById('receipt-ref2').textContent = refNum;
+      document.getElementById('receipt-name').textContent = guestName;
+      document.getElementById('receipt-phone').textContent = '+260 ' + guestPhone;
+      document.getElementById('receipt-method').textContent = providerNames[selectedProvider];
+      document.getElementById('receipt-date').textContent = dateStr;
+
+      // Room type and check-in: use localStorage if set from WhatsApp, else show placeholder
+      var roomType = localStorage.getItem('nl_room_type') || 'Confirm via WhatsApp';
+      var checkinDate = localStorage.getItem('nl_checkin') || 'Confirm via WhatsApp';
+      document.getElementById('receipt-room').textContent = roomType;
+      document.getElementById('receipt-checkin').textContent = checkinDate;
+
+      // Generate simple barcode lines from the ref number
+      var svg = document.getElementById('receipt-barcode');
+      var bars = '';
+      var seed = 0;
+      for (var i = 0; i < refNum.length; i++) { seed += refNum.charCodeAt(i); }
+      for (var i = 0; i < 30; i++) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        var w = (seed % 3) > 1 ? 2 : 1;
+        var h = 30 + (seed % 20);
+        bars += '<rect x="' + (i * 6.5) + '" y="' + (50 - h) + '" width="' + w + '" height="' + h + '" fill="#1a1a1a"/>';
+      }
+      svg.innerHTML = bars;
+
+      document.getElementById('receipt-overlay').classList.add('receipt-overlay--visible');
+      document.getElementById('receipt-overlay').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeReceipt() {
+      document.getElementById('receipt-overlay').classList.remove('receipt-overlay--visible');
+    }
+
+    document.getElementById('receipt-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeReceipt();
+    });
+
+    /* Mobile nav */
+    document.querySelector('.nav__toggle').addEventListener('click', function() {
+      document.querySelector('.nav__links').classList.toggle('nav__links--open');
+      this.classList.toggle('nav__toggle--open');
+    });
+
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
