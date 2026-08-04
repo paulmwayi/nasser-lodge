@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Nasser Lodge Bookings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0d; --surface: #1a1a1a; --gold: #c8944a; --text: #f0ece6; --muted: #7a7368;
+      --green: #5a7d4a; --red: #c0392b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .login-card { background: var(--surface); border: 1px solid rgba(200,148,74,0.15); border-radius: 16px; padding: 3rem; max-width: 420px; width: 100%; text-align: center; }
+    .login-card h1 { font-family: 'Playfair Display', serif; font-size: 1.75rem; margin-bottom: 0.5rem; color: var(--gold); }
+    .login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+    .login-card input { width: 100%; padding: 1rem; border-radius: 8px; border: 1px solid rgba(200,148,74,0.15); background: var(--bg); color: var(--text); font-size: 1rem; text-align: center; margin-bottom: 1rem; }
+    .login-card input:focus { outline: none; border-color: var(--gold); }
+    .login-card button { width: 100%; padding: 1rem; border: none; border-radius: 100px; background: var(--gold); color: #0d0d0d; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+    .login-error { color: var(--red); font-size: 0.8rem; margin-top: 0.5rem; min-height: 1.2rem; }
+    .dashboard { display: none; max-width: 1400px; margin: 0 auto; padding: 2rem; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-bottom: 1px solid rgba(200,148,74,0.1); margin-bottom: 2rem; }
+    .dash-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold); }
+    .dash-header button { padding: 0.5rem 1.5rem; border: 1px solid rgba(200,148,74,0.3); border-radius: 100px; background: transparent; color: var(--gold); cursor: pointer; font-size: 0.85rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); border: 1px solid rgba(200,148,74,0.08); border-radius: 12px; padding: 1.5rem; }
+    .stat-card .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.5rem; }
+    .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--gold); }
+    .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .filters input, .filters select { padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid rgba(200,148,74,0.15); background: var(--surface); color: var(--text); font-size: 0.85rem; }
+    .filters input { flex: 1; min-width: 200px; }
+    .filters input:focus, .filters select:focus { outline: none; border-color: var(--gold); }
+    .bookings-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .bookings-table th { text-align: left; padding: 0.75rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border-bottom: 2px solid rgba(200,148,74,0.1); }
+    .bookings-table td { padding: 0.75rem; border-bottom: 1px solid rgba(200,148,74,0.04); }
+    .bookings-table tr:hover { background: rgba(200,148,74,0.04); }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+    .badge--confirmed { background: rgba(90,125,74,0.2); color: var(--green); }
+    .badge--pending { background: rgba(200,148,74,0.15); color: var(--gold); }
+    .badge--cancelled { background: rgba(192,57,43,0.15); color: var(--red); }
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: var(--text); margin-bottom: 0.5rem; }
+    .loading { text-align: center; padding: 3rem; color: var(--muted); }
+    .btn-sm { padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-confirm { background: var(--green); color: #fff; }
+    .btn-cancel { background: var(--red); color: #fff; }
+    .btn-delete { background: transparent; border: 1px solid var(--red); color: var(--red); margin-left: 0.25rem; }
+    @media (max-width: 768px) {
+      .bookings-table thead { display: none; }
+      .bookings-table, .bookings-table tbody, .bookings-table tr, .bookings-table td { display: block; }
+      .bookings-table tr { margin-bottom: 1rem; background: var(--surface); border-radius: 8px; padding: 0.75rem; }
+      .bookings-table td { padding: 0.3rem 0; border: none; display: flex; justify-content: space-between; }
+      .bookings-table td::before { content: attr(data-label); font-weight: 600; font-size: 0.65rem; text-transform: uppercase; color: var(--muted); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-page" id="login-page">
+  <div class="login-card">
+    <h1>Nasser Lodge</h1>
+    <p>Admin Dashboard — Manage Bookings</p>
+    <input type="password" id="admin-password" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboard">
+  <div class="dash-header">
+    <h1>📋 Booking Management</h1>
+    <button onclick="logout()">Sign Out</button>
+  </div>
+
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Bookings</div><div class="stat-value" id="stat-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">Confirmed</div><div class="stat-value" id="stat-confirmed" style="color:var(--green);">0</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending">0</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue (Paid)</div><div class="stat-value" id="stat-revenue">ZMW 0</div></div>
+  </div>
+
+  <div class="filters">
+    <input type="text" id="filter-search" placeholder="Search by name, phone, or ref…" oninput="renderTable()">
+    <select id="filter-status" onchange="renderTable()">
+      <option value="">All Status</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="pending">Pending</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+  </div>
+
+  <div class="loading" id="loading">Loading bookings…</div>
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <h3>No bookings yet</h3>
+    <p>Bookings will appear here when guests book through the website.</p>
+  </div>
+  <table class="bookings-table" id="bookings-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>Ref</th><th>Guest</th><th>Phone</th><th>Room</th><th>Check-in</th><th>Check-out</th>
+        <th>Total</th><th>Paid</th><th>Balance</th><th>Method</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="bookings-tbody"></tbody>
+  </table>
+</div>
+
+<script>
+var API_URL = '/api/admin';
+var PASSWORD = 'nasser2026';
+var bookings = [];
+
+function login() {
+  var pw = document.getElementById('admin-password').value;
+  if (pw !== PASSWORD) {
+    document.getElementById('login-error').textContent = 'Incorrect password.';
+    return;
+  }
+  PASSWORD = pw;
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadBookings();
+}
+
+function logout() {
+  bookings = [];
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('admin-password').value = '';
+}
+
+async function loadBookings() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('bookings-table').style.display = 'none';
+  try {
+    var res = await fetch(API_URL + '?key=' + encodeURIComponent(PASSWORD));
+    if (res.status === 401) { logout(); return; }
+    var data = await res.json();
+    bookings = data.bookings || [];
+    renderStats(data.stats);
+    renderTable();
+  } catch(e) {
+    document.getElementById('loading').textContent = 'Failed to load. Is the backend running?';
+  }
+}
+
+function renderStats(stats) {
+  if (!stats) return;
+  document.getElementById('stat-total').textContent = stats.total || 0;
+  document.getElementById('stat-confirmed').textContent = stats.confirmed || 0;
+  document.getElementById('stat-pending').textContent = stats.pending || 0;
+  document.getElementById('stat-revenue').textContent = 'ZMW ' + ((stats.totalRevenue || 0).toLocaleString());
+}
+
+function renderTable() {
+  var search = (document.getElementById('filter-search').value || '').toLowerCase();
+  var status = document.getElementById('filter-status').value;
+
+  var filtered = bookings.filter(function(b) {
+    if (status && b.status !== status) return false;
+    if (search) {
+      var match = (b.name || '').toLowerCase().includes(search) ||
+        (b.phone || '').includes(search) || (b.ref || '').toLowerCase().includes(search);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('loading').style.display = 'none';
+
+  if (filtered.length === 0) {
+    document.getElementById('empty-state').style.display = 'block';
+    document.getElementById('bookings-table').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('bookings-table').style.display = 'table';
+
+  var tbody = document.getElementById('bookings-tbody');
+  tbody.innerHTML = filtered.map(function(b) {
+    return '<tr>' +
+      '<td data-label="Ref">' + (b.ref || '-') + '</td>' +
+      '<td data-label="Guest">' + (b.name || '-') + '</td>' +
+      '<td data-label="Phone">' + (b.phone || '-') + '</td>' +
+      '<td data-label="Room">' + (b.room || '-') + '</td>' +
+      '<td data-label="Check-in">' + fmtDate(b.checkin) + '</td>' +
+      '<td data-label="Check-out">' + fmtDate(b.checkout) + '</td>' +
+      '<td data-label="Total">ZMW ' + (b.total || 0).toLocaleString() + '</td>' +
+      '<td data-label="Paid">ZMW ' + (b.deposit || 0).toLocaleString() + '</td>' +
+      '<td data-label="Balance">ZMW ' + (b.balance || 0).toLocaleString() + '</td>' +
+      '<td data-label="Method">' + (b.paymentMethod || '-') + '</td>' +
+      '<td data-label="Status"><span class="badge badge--' + b.status + '">' + b.status + '</span></td>' +
+      '<td data-label="Actions">' +
+        (b.status === 'pending' ? '<button class="btn-sm btn-confirm" onclick="updateStatus(\'' + b.id + '\',\'confirmed\')">Confirm</button> ' : '') +
+        (b.status !== 'cancelled' ? '<button class="btn-sm btn-cancel" onclick="updateStatus(\'' + b.id + '\',\'cancelled\')">Cancel</button>' : '') +
+        '<button class="btn-sm btn-delete" onclick="deleteBooking(\'' + b.id + '\')">Del</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '-';
+  var parts = iso.split('T')[0].split('-');
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+async function updateStatus(id, status) {
+  try {
+    var res = await fetch(API_URL + '?key=' + encodeURIComponent(PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, status: status })
+    });
+    var data = await res.json();
+    if (data.success) loadBookings();
+  } catch(e) { alert('Failed to update.'); }
+}
+
+async function deleteBooking(id) {
+  if (!confirm('Delete this booking permanently?')) return;
+  try {
+    var res = await fetch(API_URL + '?key=' + encodeURIComponent(PASSWORD), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, action: 'delete' })
+    });
+    var data = await res.json();
+    if (data.success) loadBookings();
+  } catch(e) { alert('Failed to delete.'); }
+}
+</script>
+</body>
+</html>
