@@ -38,14 +38,10 @@ function generateReference() {
 }
 
 // Map our provider names to Africa's Talking provider channels
-// For sandbox, use whatever channel you registered (default "1212")
-// For live, these would be provider-specific channels from your AT dashboard
 function toATChannel(provider) {
-  // If AT_PROVIDER_CHANNEL is explicitly set, use it for all providers
   if (process.env.AT_PROVIDER_CHANNEL) {
     return process.env.AT_PROVIDER_CHANNEL;
   }
-  // Otherwise try to map known providers
   const map = {
     'airtel': 'AIRTEL',
     'mtn': 'MTN',
@@ -57,30 +53,15 @@ function toATChannel(provider) {
   return map[provider] || provider.toUpperCase();
 }
 
-// Clean phone to international format: +260XXXXXXXXX
 function toInternationalPhone(raw) {
   const cleaned = raw.replace(/[^0-9]/g, '');
-  if (cleaned.startsWith('260') && cleaned.length === 12) {
-    return '+' + cleaned;
-  }
-  if (cleaned.length === 9) {
-    return '+260' + cleaned;
-  }
-  // Already has country code prefix
+  if (cleaned.startsWith('260') && cleaned.length === 12) return '+' + cleaned;
+  if (cleaned.length === 9) return '+260' + cleaned;
   return '+' + cleaned.replace(/^\+/, '');
 }
 
 /**
  * Initiate a mobile money checkout (C2B) request.
- * This pushes a USSD prompt to the customer's phone asking them to enter their PIN.
- *
- * @param {Object} params
- * @param {string} params.phoneNumber — Customer phone number
- * @param {number} params.amount — Amount to charge
- * @param {string} params.currency — Currency code (default "ZMW")
- * @param {string} params.provider — Provider name (airtel/mtn/zamtel)
- * @param {Object} params.metadata — Additional metadata for the transaction
- * @param {string} params.reference — Optional custom reference
  */
 async function initiateMobileCheckout({ phoneNumber, amount, currency, provider, metadata, reference }) {
   if (!isPaymentsEnabled()) {
@@ -92,89 +73,106 @@ async function initiateMobileCheckout({ phoneNumber, amount, currency, provider,
   const providerChannel = toATChannel(provider);
   const currencyCode = currency || 'ZMW';
 
-  const body = {
+  const payload = {
     username: AT_USERNAME,
     productName: AT_PRODUCT_NAME,
     providerChannel: providerChannel,
     phoneNumber: phone,
     currencyCode: currencyCode,
-    amount: Math.round(amount), // AT expects integer
+    amount: Math.round(amount),
     metadata: metadata || {}
   };
 
   const url = baseURL() + '/mobile/checkout/request';
+  console.log('AT Payment Request →', url, JSON.stringify({ ...payload, metadata: '...' }));
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apiKey': AT_API_KEY
-    },
-    body: JSON.stringify(body)
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
-  const data = await res.json();
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apiKey': AT_API_KEY
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
 
-  if (res.status === 201 || data.status === 'PendingConfirmation') {
-    return {
-      success: true,
-      transactionId: data.transactionId,
-      providerChannel: data.providerChannel,
-      status: data.status,        // "PendingConfirmation"
-      description: data.description, // "Waiting for user input"
-      reference: ref
-    };
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
+
+    console.log('AT Payment Response ←', res.status, JSON.stringify(data).slice(0, 300));
+
+    if (res.status === 201 || data.status === 'PendingConfirmation') {
+      return {
+        success: true,
+        transactionId: data.transactionId,
+        providerChannel: data.providerChannel,
+        status: data.status,
+        description: data.description,
+        reference: ref
+      };
+    }
+
+    throw new Error(data.description || data.errorMessage || data.raw || `AT returned HTTP ${res.status}`);
+  } finally {
+    clearTimeout(timeout);
   }
-
-  // Payment initiation failed
-  throw new Error(data.description || data.errorMessage || 'Payment initiation failed');
 }
 
 /**
  * Check the status of a payment transaction.
- * Since Africa's Talking doesn't have automatic webhooks for checkout,
- * we poll this endpoint to see if payment was completed.
- *
- * @param {string} transactionId — The ATPid_xxx from initiateMobileCheckout
  */
 async function checkTransactionStatus(transactionId) {
   if (!isPaymentsEnabled()) {
     throw new Error('AT_API_KEY and AT_USERNAME must be configured');
   }
 
-  const url = baseURL() + '/query/transaction/find';
   const body = {
     username: AT_USERNAME,
     transactionId: transactionId
   };
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apiKey': AT_API_KEY
-    },
-    body: JSON.stringify(body)
-  });
+  const url = baseURL() + '/query/transaction/find';
 
-  const data = await res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
-  if (res.ok || data.status === 'Success') {
-    return {
-      transactionId: data.transactionId,
-      status: data.status,           // "Success", "Failed", "PendingConfirmation"
-      value: data.value,
-      category: data.category,
-      provider: data.provider,
-      providerChannel: data.providerChannel,
-      source: data.source,
-      destination: data.destination,
-      transactionFee: data.transactionFee,
-      creationTime: data.creationTime
-    };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apiKey': AT_API_KEY
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    const data = await res.json();
+
+    if (res.ok || data.status === 'Success') {
+      return {
+        transactionId: data.transactionId,
+        status: data.status,
+        value: data.value,
+        category: data.category,
+        provider: data.provider,
+        providerChannel: data.providerChannel,
+        source: data.source,
+        destination: data.destination,
+        transactionFee: data.transactionFee,
+        creationTime: data.creationTime
+      };
+    }
+
+    throw new Error(data.description || 'Transaction lookup failed');
+  } finally {
+    clearTimeout(timeout);
   }
-
-  throw new Error(data.description || 'Transaction lookup failed');
 }
 
 module.exports = {
