@@ -93,32 +93,40 @@ module.exports = async function handler(req, res) {
       flwStatus: null
     };
 
-    // If paymentMethod and deposit are provided, initiate Flutterwave charge
+    // If paymentMethod and deposit are provided, try to initiate payment charge
+    // Falls back gracefully if no payment API key is configured
     let flwResult = null;
-    if (paymentMethod && deposit > 0 && process.env.FLW_SECRET_KEY) {
-      try {
-        flwResult = await flw.initiateMobileMoneyCharge({
-          name: name,
-          phone: phone,
-          email: email || ('guest-' + phone.replace(/[^0-9]/g, '') + '@nasserlodge.com'),
-          network: paymentMethod,
-          amount: deposit,
-          currency: 'ZMW',
-          reference: bookingRef,
-          meta: { bookingId: newBooking.id, room: room, checkin: checkin, checkout: checkout }
-        });
+    let paymentInitiated = false;
+    const hasPaymentAPI = !!(process.env.FLW_SECRET_KEY);
 
-        // Store Flutterwave charge data on the booking
-        newBooking.flwChargeId = flwResult.chargeId;
-        newBooking.flwRef = flwResult.reference;
-        newBooking.flwStatus = flwResult.status;
-        newBooking.paymentMethod = paymentMethod;
-        newBooking.deposit = deposit;
-        newBooking.balance = (total || 0) - deposit;
-      } catch (e) {
-        console.error('Flutterwave charge initiation failed:', e.message);
-        // Still save the booking — payment can be retried
+    if (paymentMethod && deposit > 0) {
+      newBooking.paymentMethod = paymentMethod;
+      newBooking.deposit = deposit;
+      newBooking.balance = (total || 0) - deposit;
+
+      if (hasPaymentAPI) {
+        try {
+          flwResult = await flw.initiateMobileMoneyCharge({
+            name: name,
+            phone: phone,
+            email: email || ('guest-' + phone.replace(/[^0-9]/g, '') + '@nasserlodge.com'),
+            network: paymentMethod,
+            amount: deposit,
+            currency: 'ZMW',
+            reference: bookingRef,
+            meta: { bookingId: newBooking.id, room: room, checkin: checkin, checkout: checkout }
+          });
+
+          newBooking.flwChargeId = flwResult.chargeId;
+          newBooking.flwRef = flwResult.reference;
+          newBooking.flwStatus = flwResult.status;
+          paymentInitiated = true;
+        } catch (e) {
+          console.error('Payment initiation failed, saving as pending:', e.message);
+          // Falls through — booking saved as pending
+        }
       }
+      // When no payment API is configured, booking stays pending — admin confirms manually
     }
 
     bookings.push(newBooking);
@@ -127,6 +135,7 @@ module.exports = async function handler(req, res) {
     return res.status(201).json({
       success: true,
       booking: newBooking,
+      paymentInitiated: paymentInitiated,
       flw: flwResult ? {
         chargeId: flwResult.chargeId,
         reference: flwResult.reference,

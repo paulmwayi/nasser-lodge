@@ -69,6 +69,16 @@ module.exports = async function handler(req, res) {
       const booking = bookings.find(b => b.id === id);
       if (!booking) return res.status(404).json({ success: false, error: 'Not found' });
       booking.status = status;
+      // When admin confirms, mark as paid
+      if (status === 'confirmed') {
+        booking.paid = true;
+        booking.paidAt = booking.paidAt || new Date().toISOString();
+        // If no deposit set, default to 50% of total
+        if (!booking.deposit || booking.deposit <= 0) {
+          booking.deposit = Math.ceil((booking.total || 0) * 0.5);
+          booking.balance = (booking.total || 0) - booking.deposit;
+        }
+      }
       await writeBookings(bookings);
       return res.status(200).json({ success: true, booking });
     }

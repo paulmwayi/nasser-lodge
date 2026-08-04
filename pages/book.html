@@ -491,23 +491,39 @@
         bookingId = data.booking.id;
         bookingRef = data.booking.ref;
 
-        document.getElementById('popup-step-amount').style.display = 'none';
-        document.getElementById('popup-step-waiting').style.display = 'block';
-        document.getElementById('popup-spinner').style.display = 'block';
-        document.getElementById('waiting-title').textContent = 'Confirm on Your Phone';
-        document.getElementById('waiting-msg').textContent =
-          'A payment request of ZMW ' + paymentAmount.toLocaleString() +
-          ' has been sent to your phone via ' + PROVIDER_NAMES[selectedProvider] +
-          '. Please check your phone and enter your mobile money PIN to confirm.';
-        document.getElementById('waiting-error').textContent = '';
-
-        startPolling();
+        // If a real payment API was used, poll for phone confirmation
+        if (data.paymentInitiated && data.flw) {
+          document.getElementById('popup-step-amount').style.display = 'none';
+          document.getElementById('popup-step-waiting').style.display = 'block';
+          document.getElementById('popup-spinner').style.display = 'block';
+          document.getElementById('waiting-title').textContent = 'Confirm on Your Phone';
+          document.getElementById('waiting-msg').textContent =
+            'A payment request of ZMW ' + paymentAmount.toLocaleString() +
+            ' has been sent to your phone via ' + PROVIDER_NAMES[selectedProvider] +
+            '. Please check your phone and enter your mobile money PIN to confirm.';
+          document.getElementById('waiting-error').textContent = '';
+          startPolling();
+        } else {
+          // No payment API connected — show pending status with receipt
+          showPendingSuccess();
+        }
 
       } catch (err) {
         document.getElementById('amount-error').textContent = 'Network error. Please try again.';
         document.getElementById('pay-now-btn').disabled = false;
         document.getElementById('pay-now-btn').textContent = 'Pay Now';
       }
+    }
+
+    function showPendingSuccess() {
+      document.getElementById('popup-step-amount').style.display = 'none';
+      document.getElementById('success-msg').textContent =
+        'Booking confirmed! Your reference is ' + bookingRef +
+        '. Please pay ZMW ' + paymentAmount.toLocaleString() +
+        ' via ' + PROVIDER_NAMES[selectedProvider] +
+        ' at the lodge or through our payment channels. Your room is reserved.';
+      document.getElementById('popup-step-success').style.display = 'block';
+      setStep(3);
     }
 
     function startPolling() {
