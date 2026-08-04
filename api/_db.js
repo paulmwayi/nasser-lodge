@@ -7,9 +7,9 @@ const BOOKINGS_KEY = 'bookings_list';
 const memoryStore = new Map();
 
 async function redisFetch(command, ...args) {
-  const url = `${process.env.UPSTASH_REDIS_REST_URL}/${command}/${args.join('/')}`;
+  const url = `${process.env.KV_REST_API_URL}/${command}/${args.join('/')}`;
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` }
+    headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` }
   });
   if (!res.ok) throw new Error(`Redis error: ${res.status}`);
   const data = await res.json();
@@ -17,7 +17,7 @@ async function redisFetch(command, ...args) {
 }
 
 function isRedisAvailable() {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 }
 
 async function readBookings() {
