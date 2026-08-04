@@ -7,18 +7,108 @@
   <title>Book Your Stay — Nasser Lodge | Mongu, Zambia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    .page-header { padding: 10rem var(--space-lg) var(--space-xl); text-align: center; background: var(--color-bg-warm); }
-    .page-body { padding: var(--space-2xl) var(--space-lg); max-width: var(--max-width); margin: 0 auto; }
-    .booking-layout { display: grid; grid-template-columns: 1fr; max-width: 600px; margin: 0 auto; gap: var(--space-2xl); }
-    .booking-form-wrapper { background: var(--color-surface); border: 1px solid rgba(200,148,74,0.1); border-radius: 16px; padding: var(--space-2xl); }
-    .booking-form-wrapper h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: var(--space-sm); }
-    .booking-form-wrapper > p { color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.7; margin-bottom: var(--space-xl); }
-    .form-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--space-lg); padding: var(--space-md); background: var(--color-bg-deep); border-radius: 8px; border-left: 3px solid var(--color-gold); }
-    .booking-form-wrapper .form-group { margin-bottom: var(--space-lg); }
-    .booking-form-wrapper .form-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; }
-    .booking-form-wrapper .form-input { font-size: 1rem; padding: 1rem; background: var(--color-bg-deep); border-color: rgba(200,148,74,0.12); }
-    .booking-form-wrapper .form-input:focus { border-color: var(--color-gold); box-shadow: 0 0 0 3px rgba(200,148,74,0.08); }
-    .input-with-prefix { display: flex;
+    .page-header{padding:10rem var(--space-lg) var(--space-xl);text-align:center;background:var(--color-bg-warm)}
+    .page-body{padding:var(--space-2xl) var(--space-lg);max-width:var(--max-width);margin:0 auto}
+    .booking-layout{display:grid;grid-template-columns:1fr;max-width:600px;margin:0 auto;gap:var(--space-2xl)}
+    .booking-form-wrapper{background:var(--color-surface);border:1px solid rgba(200,148,74,0.1);border-radius:16px;padding:var(--space-2xl)}
+    .booking-form-wrapper h2{font-family:var(--font-display);font-size:1.5rem;margin-bottom:var(--space-sm)}
+    .booking-form-wrapper>p{color:var(--color-text-secondary);font-size:.9rem;line-height:1.7;margin-bottom:var(--space-xl)}
+    .form-intro{font-size:.82rem;color:var(--color-text-muted);line-height:1.7;margin-bottom:var(--space-lg);padding:var(--space-md);background:var(--color-bg-deep);border-radius:8px;border-left:3px solid var(--color-gold)}
+    .booking-form-wrapper .form-group{margin-bottom:var(--space-lg)}
+    .booking-form-wrapper .form-label{font-size:.75rem;font-weight:600;letter-spacing:.08em}
+    .booking-form-wrapper .form-input{font-size:1rem;padding:1rem;background:var(--color-bg-deep);border-color:rgba(200,148,74,0.12)}
+    .booking-form-wrapper .form-input:focus{border-color:var(--color-gold);box-shadow:0 0 0 3px rgba(200,148,74,0.08)}
+    .input-with-prefix{display:flex;background:var(--color-bg-deep);border:1px solid rgba(200,148,74,0.12);border-radius:8px;overflow:hidden;transition:border-color var(--duration-fast),box-shadow var(--duration-fast)}
+    .input-with-prefix:focus-within{border-color:var(--color-gold);box-shadow:0 0 0 3px rgba(200,148,74,0.08)}
+    .input-prefix{display:flex;align-items:center;padding:0 .8rem;font-weight:600;font-size:.95rem;color:var(--color-text-muted);background:rgba(200,148,74,0.04);border-right:1px solid rgba(200,148,74,0.1);white-space:nowrap}
+    .input-with-prefix input{flex:1;background:transparent;border:none;padding:1rem;color:var(--color-text-primary);font-family:var(--font-body);font-size:1rem;outline:none}
+    .receipt-overlay{display:none;position:fixed;inset:0;background:rgba(13,13,13,0.95);z-index:var(--z-modal);align-items:center;justify-content:center;padding:var(--space-lg);overflow-y:auto}
+    .receipt-overlay--visible{display:flex}
+    .receipt{background:#fff;color:#1a1a1a;max-width:480px;width:100%;border-radius:4px;font-family:'Courier New',monospace;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+    .receipt__header{text-align:center;padding:2rem 2rem 1rem;border-bottom:2px dashed #ccc}
+    .receipt__body{padding:1.5rem 2rem}
+    .receipt__row{display:flex;justify-content:space-between;padding:.4rem 0;font-size:.8rem;border-bottom:1px dotted #eee}
+    .receipt__row .label{color:#666;text-transform:uppercase;font-size:.65rem;letter-spacing:.08em}
+    .receipt__row .value{font-weight:700;text-align:right}
+    .receipt__ref{text-align:center;padding:1rem 0;font-size:1.5rem;font-weight:700;letter-spacing:.1em;color:#c8944a}
+    .receipt__footer{text-align:center;padding:1.5rem 2rem 2rem;border-top:2px dashed #ccc;font-size:.7rem;color:#888;line-height:1.8}
+    .receipt__barcode{text-align:center;padding:.5rem 0}
+    .receipt__actions{display:flex;gap:var(--space-md);justify-content:center;margin-top:var(--space-xl)}
+    .receipt__print-btn,.receipt__close-btn{padding:.7rem 1.5rem;border-radius:100px;font-weight:600;font-size:.85rem;cursor:pointer;border:none;font-family:var(--font-body)}
+    .receipt__print-btn{background:#c8944a;color:#fff}
+    .receipt__print-btn:hover{background:#b8843a}
+    .receipt__close-btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.3)}
+    .receipt__close-btn:hover{border-color:#fff}
+    @media print{body *{visibility:hidden}.receipt-overlay,.receipt-overlay *{visibility:visible}.receipt-overlay{position:absolute;inset:0;background:#fff;display:flex;margin:0;padding:0}.receipt{box-shadow:none;border-radius:0;max-width:100%}.receipt__actions{display:none}}
+    @media (max-width:900px){.booking-layout{max-width:100%}}
+    @media (max-width:480px){.booking-form-wrapper{padding:var(--space-lg)}.receipt__body,.receipt__header,.receipt__footer{padding-left:1rem;padding-right:1rem}}
+    .nav__logo-img{height:38px;width:auto;display:block}
+  </style>
+</head>
+<body>
+<nav class="nav nav--scrolled" role="navigation">
+<a href="../index.html" class="nav__logo"><img src="../assets/logo.png" alt="Nasser Lodge" class="nav__logo-img"></a>
+<button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false"><span></span><span></span><span></span></button>
+<ul class="nav__links"><li><a href="../index.html#rooms">Rooms</a></li><li><a href="../index.html#dining">Dining</a></li><li><a href="../index.html#location">Location</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="book.html" style="color:var(--color-gold)">Book Now</a></li></ul>
+</nav>
+<header class="page-header"><span class="section-label">Reservations</span><h1>Book Your Stay</h1><p class="subtitle" style="margin:var(--space-md) auto 0">Enter your details below and we'll confirm your booking.</p></header>
+<main class="page-body">
+<div class="booking-layout"><div class="booking-form-wrapper">
+<h2>Your Details</h2>
+<p>Just your name and phone number — we'll confirm your booking and send you details via WhatsApp.</p>
+<form id="booking-form" novalidate>
+<div class="form-group"><label class="form-label" for="fullname">Full Name *</label><input class="form-input" type="text" id="fullname" name="fullname" required placeholder="e.g. Mwayi Moonga" autocomplete="name"></div>
+<div class="form-group"><label class="form-label" for="phone">Phone Number (WhatsApp) *</label><div class="input-with-prefix"><span class="input-prefix">+260</span><input type="tel" id="phone" name="phone" required placeholder="9XX XXX XXX" autocomplete="tel"></div></div>
+<div class="form-group"><label class="form-label" for="room-type">Room Type *</label><select class="form-input" id="room-type" name="room-type" required style="appearance:auto;-webkit-appearance:auto;padding-right:1rem"><option value="">Select a room…</option><option value="Standard Room">Standard Room — ZMW 500/night</option><option value="Deluxe Room">Deluxe Room — ZMW 750/night</option><option value="Executive Suite">Executive Suite — ZMW 1,200/night</option></select></div>
+<div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)"><div><label class="form-label" for="checkin">Check-in *</label><input class="form-input" type="date" id="checkin" name="checkin" required></div><div><label class="form-label" for="checkout">Check-out *</label><input class="form-input" type="date" id="checkout" name="checkout" required></div></div>
+<p class="form-intro">Once you submit, your booking is confirmed and you'll receive a <strong>digital receipt</strong> you can print and present at check-in. Payment is handled at the lodge or via the contact details on your receipt.</p>
+<button type="submit" class="btn btn--primary" style="width:100%" id="submit-btn">Confirm Booking</button>
+</form></div></div></main>
+<div class="receipt-overlay" id="receipt-overlay"><div>
+<div class="receipt" id="receipt">
+<div class="receipt__header"><img src="../assets/logo.png" alt="Nasser Lodge" style="width:80px;height:auto;display:block;margin:0 auto 4px"><div class="receipt__tagline">Where luxury feels like home</div><div class="receipt__addr">Mongu, Western Province, Zambia</div></div>
+<div class="receipt__body">
+<div class="receipt__ref" id="receipt-ref">NL-2026-0001</div>
+<div class="receipt__row"><span class="label">Guest</span><span class="value" id="receipt-name">-</span></div>
+<div class="receipt__row"><span class="label">Phone</span><span class="value" id="receipt-phone">-</span></div>
+<div class="receipt__row"><span class="label">Ref</span><span class="value" id="receipt-ref2">-</span></div>
+<div class="receipt__row"><span class="label">Room</span><span class="value" id="receipt-room">-</span></div>
+<div class="receipt__row"><span class="label">Check-in</span><span class="value" id="receipt-checkin">-</span></div>
+<div class="receipt__row"><span class="label">Check-out</span><span class="value" id="receipt-checkout">-</span></div>
+<div class="receipt__row"><span class="label">Nights</span><span class="value" id="receipt-nights">-</span></div>
+<div class="receipt__row"><span class="label">Rate / Night</span><span class="value" id="receipt-rate">-</span></div>
+<div class="receipt__row" style="border-top:1px solid #ccc;padding-top:.6rem"><span class="label" style="font-weight:700">Total</span><span class="value" style="font-weight:700;font-size:1rem" id="receipt-total">-</span></div>
+<div class="receipt__row"><span class="label">Issued</span><span class="value" id="receipt-date">-</span></div>
+<div class="receipt__row"><span class="label">Status</span><span class="value" style="color:#006838">CONFIRMED</span></div>
+<div class="receipt__barcode"><svg id="receipt-barcode" width="160" height="24" viewBox="0 0 160 24"></svg></div>
+</div>
+<div class="receipt__footer"><strong>Check-in:</strong> Present this receipt at reception. Payment handled at the lodge.<br><strong>Cancellation &amp; Refund:</strong> Free cancellation 48h+ before check-in. Within 48h: deposit non-refundable. No-shows forfeit deposit.<br><strong>Changes?</strong> Call or WhatsApp us.<br>P4HQ+W93, Lusaka Road, Mongu &bull; +260 978 176 195 &bull; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e886899b9b8d9a84878c8f8d9bdcd1a88f85898184c68b8785">[email&#160;protected]</a><br><em>Thank you for choosing Nasser Lodge.</em></div>
+</div>
+<div class="receipt__actions"><button class="receipt__print-btn" onclick="window.print()">Print Receipt</button><button class="receipt__close-btn" onclick="closeReceipt()">Close</button></div>
+</div></div>
+<footer class="footer" role="contentinfo">
+<div class="footer__inner">
+<div><div class="footer__brand">Nasser Lodge</div><p class="footer__desc">Where luxury feels like home. Premium accommodation in Mongu, Western Province, Zambia.</p></div>
+<div><div class="footer__heading">Quick Links</div><ul class="footer__links"><li><a href="../index.html#rooms">Rooms</a></li><li><a href="../index.html#dining">Dining</a></li><li><a href="../index.html#location">Location</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="book.html">Book Now</a></li></ul></div>
+<div><div class="footer__heading">Contact</div><ul class="footer__links"><li>P4HQ+W93, Lusaka Road, Mongu</li><li><a href="tel:+260978176195">+260 978 176 195</a></li><li><a href="/cdn-cgi/l/email-protection#5a343b29293f2836353e3d3f296e631a3d373b333674393537"><span class="__cf_email__" data-cfemail="cba5aab8b8aeb9a7a4afacaeb8fff28baca6aaa2a7e5a8a4a6">[email&#160;protected]</span></a></li><li><a href="https://facebook.com/nasserlodge" target="_blank" rel="noopener">Facebook</a></li></ul></div>
+</div>
+<div class="footer__bottom"><span>&copy; <span id="current-year">2026</span> Nasser Lodge. All rights reserved.</span><span>Mongu, Western Province, Zambia</span></div>
+</footer>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+var guestName='',guestPhone='',bookingRef=null;
+var ROOM_RATES={'Standard Room':500,'Deluxe Room':750,'Executive Suite':1200};
+function formatDateReadable(iso){if(!iso)return'-';var p=iso.split('-'),m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return p[2]+' '+m[parseInt(p[1])-1]+' '+p[0]}
+document.getElementById('booking-form').addEventListener('submit',async function(e){e.preventDefault();var c=document.getElementById('checkin').value,o=document.getElementById('checkout').value,r=document.getElementById('room-type').value;guestName=document.getElementById('fullname').value.trim();guestPhone=document.getElementById('phone').value.trim();if(!guestName||!guestPhone||!c||!o||!r)return;var n=Math.max(1,Math.round((new Date(o)-new Date(c))/86400000)),t=n*ROOM_RATES[r],b=document.getElementById('submit-btn');b.textContent='Booking...';b.disabled=true;try{var res=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:guestName,phone:guestPhone,room:r,checkin:c,checkout:o,nights:n,total:t})}),d=await res.json();if(!d.success){var msg=d.error||'Booking failed.';if(res.status===409)msg='Room already booked for these dates.';alert(msg);b.textContent='Confirm Booking';b.disabled=false;return}bookingRef=d.booking.ref;window._checkin=c;window._checkout=o;window._roomType=r;window._nights=n;window._totalPrice=t;showReceipt()}catch(e){alert('Network error. Please try again.');b.textContent='Confirm Booking';b.disabled=false}});
+function showReceipt(){var n=new Date(),ds=n.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+' '+n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});document.getElementById('receipt-ref').textContent=bookingRef;document.getElementById('receipt-ref2').textContent=bookingRef;document.getElementById('receipt-name').textContent=guestName;document.getElementById('receipt-phone').textContent='+260 '+guestPhone;document.getElementById('receipt-date').textContent=ds;document.getElementById('receipt-room').textContent=window._roomType||'-';document.getElementById('receipt-checkin').textContent=formatDateReadable(window._checkin);document.getElementById('receipt-checkout').textContent=formatDateReadable(window._checkout);document.getElementById('receipt-nights').textContent=(window._nights||1)+((window._nights===1)?' night':' nights');document.getElementById('receipt-rate').textContent='ZMW '+(ROOM_RATES[window._roomType]||0).toLocaleString();document.getElementById('receipt-total').textContent='ZMW '+(window._totalPrice||0).toLocaleString();var svg=document.getElementById('receipt-barcode'),bars='',s=0;for(var i=0;i<(bookingRef||'').length;i++)s+=bookingRef.charCodeAt(i);for(var j=0;j<30;j++){s=(s*1103515245+12345)&0x7fffffff;var w=(s%3)>1?2:1,h=30+(s%20);bars+='<rect x="'+(j*6.5)+'" y="'+(50-h)+'" width="'+w+'" height="'+h+'" fill="#1a1a1a"/>'}svg.innerHTML=bars;document.getElementById('receipt-overlay').classList.add('receipt-overlay--visible');document.getElementById('receipt-overlay').scrollIntoView({behavior:'smooth'})}
+function closeReceipt(){document.getElementById('receipt-overlay').classList.remove('receipt-overlay--visible')}
+document.getElementById('receipt-overlay').addEventListener('click',function(e){if(e.target===this)closeReceipt()});
+(function(){var t=new Date().toISOString().split('T')[0],ci=document.getElementById('checkin'),co=document.getElementById('checkout');ci.setAttribute('min',t);ci.addEventListener('change',function(){co.setAttribute('min',this.value)});co.addEventListener('change',function(){ci.setAttribute('max',this.value)})})();
+document.querySelector('.nav__toggle').addEventListener('click',function(){document.querySelector('.nav__links').classList.toggle('nav__links--open');this.classList.toggle('nav__toggle--open')});
+document.getElementById('current-year').textContent=new Date().getFullYear();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"3279d41ec7804124a29acc6e692f9a2b"}' crossorigin="anonymous"></script>
+</body>
+</html>
