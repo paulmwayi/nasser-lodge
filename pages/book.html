@@ -249,8 +249,12 @@
           <div class="receipt__row"><span class="label">Room</span><span class="value" id="receipt-room">-</span></div>
           <div class="receipt__row"><span class="label">Check-in</span><span class="value" id="receipt-checkin">-</span></div>
           <div class="receipt__row"><span class="label">Check-out</span><span class="value" id="receipt-checkout">-</span></div>
+          <div class="receipt__row"><span class="label">Nights</span><span class="value" id="receipt-nights">-</span></div>
+          <div class="receipt__row"><span class="label">Rate / Night</span><span class="value" id="receipt-rate">-</span></div>
+          <div class="receipt__row" style="border-top:1px solid #ccc;padding-top:0.6rem;"><span class="label" style="font-weight:700;">Total</span><span class="value" style="font-weight:700;font-size:1rem;" id="receipt-total">-</span></div>
+          <div class="receipt__row"><span class="label">Deposit (50%)</span><span class="value" id="receipt-amount">ZMW 250</span></div>
+          <div class="receipt__row"><span class="label">Balance Due</span><span class="value" id="receipt-balance">-</span></div>
           <div class="receipt__row"><span class="label">Payment</span><span class="value" id="receipt-method">-</span></div>
-          <div class="receipt__row"><span class="label">Deposit</span><span class="value" id="receipt-amount">ZMW 250</span></div>
           <div class="receipt__row"><span class="label">Issued</span><span class="value" id="receipt-date">-</span></div>
           <div class="receipt__row"><span class="label">Status</span><span class="value" style="color:#006838;">CONFIRMED</span></div>
           <div class="receipt__barcode"><svg id="receipt-barcode" width="160" height="24" viewBox="0 0 160 24"></svg></div>
@@ -284,6 +288,39 @@
     var guestName = '';
     var guestPhone = '';
 
+    /* Room rates (ZMW per night) */
+    var ROOM_RATES = {
+      'Standard Room': 500,
+      'Deluxe Room': 750,
+      'Executive Suite': 1200
+    };
+
+    /* Check for double booking */
+    function getExistingBookings() {
+      try { return JSON.parse(localStorage.getItem('nl_bookings') || '[]'); } catch(e) { return []; }
+    }
+
+    function saveBooking(booking) {
+      var bookings = getExistingBookings();
+      bookings.push(booking);
+      localStorage.setItem('nl_bookings', JSON.stringify(bookings));
+    }
+
+    function isDoubleBooked(roomType, checkin, checkout) {
+      var bookings = getExistingBookings();
+      var ci = new Date(checkin);
+      var co = new Date(checkout);
+      for (var i = 0; i < bookings.length; i++) {
+        var b = bookings[i];
+        if (b.room === roomType) {
+          var bci = new Date(b.checkin);
+          var bco = new Date(b.checkout);
+          if (ci < bco && co > bci) return b;
+        }
+      }
+      return null;
+    }
+
     /* Step indicator */
     function setStep(n) {
       document.querySelectorAll('.booking-step').forEach(function(el) {
@@ -303,6 +340,15 @@
       guestName = document.getElementById('fullname').value.trim();
       guestPhone = document.getElementById('phone').value.trim();
       if (!guestName || !guestPhone || !checkin || !checkout || !roomType) return;
+
+      // Check for double booking
+      var conflict = isDoubleBooked(roomType, checkin, checkout);
+      if (conflict) {
+        var cfn = formatDateReadable(conflict.checkin);
+        var cto = formatDateReadable(conflict.checkout);
+        alert(roomType + ' is already booked from ' + cfn + ' to ' + cto + '.\nPlease choose different dates or another room type.');
+        return;
+      }
 
       // Enable payment column
       var pc = document.getElementById('payment-column');
@@ -418,8 +464,22 @@
 
       document.getElementById('receipt-room').textContent = window._roomType || 'Confirm via WhatsApp';
       document.getElementById('receipt-checkin').textContent = checkinReadable;
-      document.getElementById('receipt-checkin').textContent = checkinReadable;
       document.getElementById('receipt-checkout').textContent = checkoutReadable;
+
+      // Calculate nights and pricing
+      var ci = new Date(window._checkin);
+      var co = new Date(window._checkout);
+      var nights = Math.max(1, Math.round((co - ci) / (1000 * 60 * 60 * 24)));
+      var nightlyRate = ROOM_RATES[window._roomType] || 0;
+      var totalPrice = nights * nightlyRate;
+      var deposit = Math.ceil(totalPrice * 0.5);
+      var balance = totalPrice - deposit;
+
+      document.getElementById('receipt-nights').textContent = nights + (nights === 1 ? ' night' : ' nights');
+      document.getElementById('receipt-rate').textContent = 'ZMW ' + nightlyRate.toLocaleString();
+      document.getElementById('receipt-total').textContent = 'ZMW ' + totalPrice.toLocaleString();
+      document.getElementById('receipt-amount').textContent = 'ZMW ' + deposit.toLocaleString();
+      document.getElementById('receipt-balance').textContent = 'ZMW ' + balance.toLocaleString();
 
       // Generate simple barcode lines from the ref number
       var svg = document.getElementById('receipt-barcode');
@@ -433,6 +493,15 @@
         bars += '<rect x="' + (i * 6.5) + '" y="' + (50 - h) + '" width="' + w + '" height="' + h + '" fill="#1a1a1a"/>';
       }
       svg.innerHTML = bars;
+
+      // Save booking to prevent double booking
+      saveBooking({
+        room: window._roomType,
+        checkin: window._checkin,
+        checkout: window._checkout,
+        guest: guestName,
+        ref: refNum
+      });
 
       document.getElementById('receipt-overlay').classList.add('receipt-overlay--visible');
       document.getElementById('receipt-overlay').scrollIntoView({ behavior: 'smooth' });
