@@ -150,6 +150,15 @@
               <label class="form-label" for="phone">Phone Number (WhatsApp) *</label>
               <div class="input-with-prefix"><span class="input-prefix">+260</span><input type="tel" id="phone" name="phone" required placeholder="9XX XXX XXX" autocomplete="tel"></div>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="room-type">Room Type *</label>
+              <select class="form-input" id="room-type" name="room-type" required style="appearance:auto;-webkit-appearance:auto;padding-right:1rem;">
+                <option value="">Select a room…</option>
+                <option value="Standard Room">Standard Room — ZMW 500/night</option>
+                <option value="Deluxe Room">Deluxe Room — ZMW 750/night</option>
+                <option value="Executive Suite">Executive Suite — ZMW 1,200/night</option>
+              </select>
+            </div>
             <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
               <div>
                 <label class="form-label" for="checkin">Check-in *</label>
@@ -290,9 +299,10 @@
       e.preventDefault();
       var checkin = document.getElementById('checkin').value;
       var checkout = document.getElementById('checkout').value;
+      var roomType = document.getElementById('room-type').value;
       guestName = document.getElementById('fullname').value.trim();
       guestPhone = document.getElementById('phone').value.trim();
-      if (!guestName || !guestPhone || !checkin || !checkout) return;
+      if (!guestName || !guestPhone || !checkin || !checkout || !roomType) return;
 
       // Enable payment column
       var pc = document.getElementById('payment-column');
@@ -300,14 +310,16 @@
       pc.style.pointerEvents = 'auto';
       setStep(2);
 
-      // Store dates globally
+      // Store dates and room globally
       window._checkin = checkin;
       window._checkout = checkout;
+      window._roomType = roomType;
       // Disable form
       document.getElementById('fullname').disabled = true;
       document.getElementById('phone').disabled = true;
       document.getElementById('checkin').disabled = true;
       document.getElementById('checkout').disabled = true;
+      document.getElementById('room-type').disabled = true;
       document.getElementById('submit-btn').textContent = 'Details Saved';
       document.getElementById('submit-btn').disabled = true;
       document.getElementById('submit-btn').style.opacity = '0.6';
@@ -322,6 +334,7 @@
         'Hello Nasser Lodge! I\'d like to book a room.\n\n' +
         'Name: ' + guestName + '\n' +
         'Phone: +260 ' + guestPhone + '\n' +
+        'Room: ' + roomType + '\n' +
         'Check-in: ' + checkinDate + '\n' +
         'Check-out: ' + checkoutDate + '\n\n' +
         'Please confirm availability and deposit amount.'
@@ -403,9 +416,8 @@
       document.getElementById('receipt-method').textContent = providerNames[selectedProvider];
       document.getElementById('receipt-date').textContent = dateStr;
 
-      // Room type: use localStorage if set, else show placeholder
-      var roomType = localStorage.getItem('nl_room_type') || 'Confirm via WhatsApp';
-      document.getElementById('receipt-room').textContent = roomType;
+      document.getElementById('receipt-room').textContent = window._roomType || 'Confirm via WhatsApp';
+      document.getElementById('receipt-checkin').textContent = checkinReadable;
       document.getElementById('receipt-checkin').textContent = checkinReadable;
       document.getElementById('receipt-checkout').textContent = checkoutReadable;
 
